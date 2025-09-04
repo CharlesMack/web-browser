@@ -277,6 +277,7 @@
             background: white;
             position: relative;
             overflow: hidden;
+            transition: all 0.3s ease-in-out;
         }
 
         .webpage-frame {
@@ -284,6 +285,24 @@
             height: 100%;
             border: none;
             position: absolute;
+            top: 0;
+            left: 0;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Fullscreen-specific styles for content area and iframe */
+        .fullscreen .content-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+        }
+
+        .fullscreen .webpage-frame {
+            width: 100vw;
+            height: 100vh;
             top: 0;
             left: 0;
         }
@@ -611,7 +630,7 @@
                     <input type="text" class="address-bar" id="addressBar" placeholder="Enter URL or search..." onkeydown="handleAddressBar(event)">
                 </div>
                 
-                <div class="menu-btn" onclick="toggleMenu()" id="menuBtn">
+                <div class="menu-btn" id="menuBtn" onclick="toggleMenu()">
                     ⋮
                     <div class="dropdown-menu" id="browserMenu">
                         <div class="menu-item" onclick="newWindow()">
@@ -767,7 +786,6 @@
                     canvas.parent(document.body);
                     canvas.class('p5-canvas');
                     
-                    // Create floating particles
                     for(let i = 0; i < 50; i++) {
                         particles.push({
                             x: p.random(p.width),
@@ -781,16 +799,12 @@
                 
                 p.draw = function() {
                     p.clear();
-                    
-                    // Draw floating particles
                     for(let particle of particles) {
                         p.fill(255, 255, 255, particle.alpha);
                         p.noStroke();
                         p.circle(particle.x, particle.y, 3);
-                        
                         particle.x += particle.vx;
                         particle.y += particle.vy;
-                        
                         if(particle.x < 0 || particle.x > p.width) particle.vx *= -1;
                         if(particle.y < 0 || particle.y > p.height) particle.vy *= -1;
                     }
@@ -830,14 +844,12 @@
                 clearTimeout(mouseTimer);
 
                 if (e.clientY <= 100) {
-                    // Mouse near top - show header
                     if (!isHeaderVisible) {
                         browserHeader.classList.remove('fullscreen-hidden');
                         fullscreenToggle.classList.remove('visible');
                         isHeaderVisible = true;
                     }
                 } else {
-                    // Mouse away from top - hide header after delay
                     mouseTimer = setTimeout(() => {
                         if (isFullscreen) {
                             browserHeader.classList.add('fullscreen-hidden');
@@ -848,13 +860,11 @@
                 }
             });
 
-            // Click fullscreen toggle to show header temporarily
             fullscreenToggle.addEventListener('click', () => {
                 if (!isHeaderVisible) {
                     browserHeader.classList.remove('fullscreen-hidden');
                     fullscreenToggle.classList.remove('visible');
                     isHeaderVisible = true;
-                    
                     setTimeout(() => {
                         if (isFullscreen) {
                             browserHeader.classList.add('fullscreen-hidden');
@@ -930,9 +940,7 @@
                     <div class="logo">🌐</div>
                     <h1 class="title">P.O.P.S. Community Browser</h1>
                     <p class="subtitle">Your gateway to the web</p>
-                    
                     <input type="text" class="search-box" placeholder="Search or enter URL..." onkeydown="if(event.key==='Enter') parent.navigateToUrl(this.value)">
-                    
                     <div class="quick-links">
                         <div class="link-card" onclick="parent.navigateToUrl('https://google.com')">
                             <div style="font-size: 24px; margin-bottom: 10px;">🔍</div>
@@ -954,7 +962,6 @@
                 </body>
                 </html>
             `;
-            
             const blob = new Blob([startPageHTML], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             document.getElementById('webFrame').src = url;
@@ -969,11 +976,7 @@
 
         function navigateToUrl(url) {
             if (!url) return;
-            
-            // Close any open panels
             closeAllPanels();
-            
-            // Add protocol if missing
             if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('about:')) {
                 if (url.includes('.') && !url.includes(' ')) {
                     url = 'https://' + url;
@@ -981,13 +984,8 @@
                     url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
                 }
             }
-            
             showLoadingProgress();
-            
-            // Update address bar
             document.getElementById('addressBar').value = url;
-            
-            // Add to history
             if (historyIndex < history.length - 1) {
                 history = history.slice(0, historyIndex + 1);
             }
@@ -997,11 +995,8 @@
                 timestamp: new Date()
             });
             historyIndex = history.length - 1;
-            
             updateNavigationButtons();
             updateHistoryPanel();
-            
-            // Load the page
             try {
                 document.getElementById('webFrame').src = url;
                 updateTabTitle(url);
@@ -1014,13 +1009,10 @@
         function showLoadingProgress() {
             const loadingBar = document.getElementById('loadingBar');
             let progress = 0;
-            
             const interval = setInterval(() => {
                 progress += Math.random() * 20;
                 if (progress > 90) progress = 90;
-                
                 loadingBar.style.width = progress + '%';
-                
                 if (progress >= 90) {
                     clearInterval(interval);
                     setTimeout(() => {
@@ -1088,17 +1080,14 @@
         function newTab() {
             tabIdCounter++;
             const newTabId = tabIdCounter;
-            
             tabs.push({
                 id: newTabId,
                 title: "New Tab",
                 url: "about:blank",
                 favicon: "🌐"
             });
-            
             const tabBar = document.querySelector('.tab-bar');
             const newTabBtn = document.querySelector('.new-tab-btn');
-            
             const tabElement = document.createElement('div');
             tabElement.className = 'tab';
             tabElement.setAttribute('data-tab-id', newTabId);
@@ -1107,28 +1096,24 @@
                 <div class="tab-title">New Tab</div>
                 <div class="tab-close" onclick="closeTab(${newTabId})">×</div>
             `;
-            
             tabElement.onclick = () => switchToTab(newTabId);
-            
             tabBar.insertBefore(tabElement, newTabBtn);
             switchToTab(newTabId);
             loadStartPage();
             updateStatusText('New tab opened');
+            closeMenu();
         }
 
         function closeTab(tabId) {
             event.stopPropagation();
-            
             if (tabs.length === 1) {
                 updateStatusText('Cannot close the last tab');
                 return;
             }
-            
             const tabIndex = tabs.findIndex(t => t.id === tabId);
             if (tabIndex !== -1) {
                 tabs.splice(tabIndex, 1);
                 document.querySelector(`.tab[data-tab-id="${tabId}"]`).remove();
-                
                 if (activeTabId === tabId) {
                     const newActiveTab = tabs[Math.min(tabIndex, tabs.length - 1)];
                     switchToTab(newActiveTab.id);
@@ -1138,12 +1123,8 @@
         }
 
         function switchToTab(tabId) {
-            // Remove active class from all tabs
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            
-            // Add active class to selected tab
             document.querySelector(`.tab[data-tab-id="${tabId}"]`).classList.add('active');
-            
             activeTabId = tabId;
             const tab = tabs.find(t => t.id === tabId);
             if (tab) {
@@ -1154,10 +1135,9 @@
         }
 
         function newWindow() {
-            // Create a new browser window
+            closeMenu();
             const newWindowFeatures = 'width=1200,height=800,scrollbars=yes,resizable=yes,toolbar=yes,menubar=yes,location=yes';
             const newWindow = window.open('', '_blank', newWindowFeatures);
-            
             if (newWindow) {
                 newWindow.document.write(`
                     <!DOCTYPE html>
@@ -1198,15 +1178,21 @@
             }
         }
 
-        function toggleMenu() {
+        function closeMenu() {
             const menu = document.getElementById('browserMenu');
-            const isOpen = menu.classList.contains('show');
-            
-            if (isOpen) {
+            if (menu.classList.contains('show')) {
                 menu.classList.remove('show');
                 setTimeout(() => {
                     menu.style.display = 'none';
                 }, 200);
+            }
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('browserMenu');
+            const isOpen = menu.classList.contains('show');
+            if (isOpen) {
+                closeMenu();
             } else {
                 closeAllPanels();
                 menu.style.display = 'block';
@@ -1217,10 +1203,10 @@
         }
 
         function toggleHistory() {
+            closeMenu();
             const panel = document.getElementById('historyPanel');
             const overlay = document.getElementById('panelOverlay');
             const isOpen = panel.classList.contains('open');
-            
             if (isOpen) {
                 panel.classList.remove('open');
                 overlay.classList.remove('active');
@@ -1233,9 +1219,11 @@
         }
 
         function showBookmarks() {
-            const panel = document.getElementById('bookmarksPanel');
+            closeMenu();
+            const panel =一半
+
+            document.getElementById('bookmarksPanel');
             const overlay = document.getElementById('panelOverlay');
-            
             closeAllPanels();
             panel.classList.add('open');
             overlay.classList.add('active');
@@ -1245,16 +1233,15 @@
         function hideBookmarks() {
             const panel = document.getElementById('bookmarksPanel');
             const overlay = document.getElementById('panelOverlay');
-            
             panel.classList.remove('open');
             overlay.classList.remove('active');
             updateStatusText('Bookmarks panel closed');
         }
 
         function showSettings() {
+            closeMenu();
             const panel = document.getElementById('settingsPanel');
             const overlay = document.getElementById('panelOverlay');
-            
             closeAllPanels();
             panel.classList.add('open');
             overlay.classList.add('active');
@@ -1264,7 +1251,6 @@
         function hideSettings() {
             const panel = document.getElementById('settingsPanel');
             const overlay = document.getElementById('panelOverlay');
-            
             panel.classList.remove('open');
             overlay.classList.remove('active');
             updateStatusText('Settings panel closed');
@@ -1276,12 +1262,10 @@
             const bookmarksPanel = document.getElementById('bookmarksPanel');
             const settingsPanel = document.getElementById('settingsPanel');
             const overlay = document.getElementById('panelOverlay');
-            
             menu.classList.remove('show');
             setTimeout(() => {
                 menu.style.display = 'none';
             }, 200);
-            
             historyPanel.classList.remove('open');
             bookmarksPanel.classList.remove('open');
             settingsPanel.classList.remove('open');
@@ -1291,12 +1275,10 @@
         function updateHistoryPanel() {
             const historyList = document.getElementById('historyList');
             historyList.innerHTML = '';
-            
             if (history.length === 0) {
                 historyList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No history items</div>';
                 return;
             }
-            
             history.slice(-50).reverse().forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'history-item';
@@ -1329,7 +1311,6 @@
 
         function toggleFullscreen() {
             if (!isFullscreen) {
-                // Enter fullscreen
                 const elem = document.documentElement;
                 if (elem.requestFullscreen) {
                     elem.requestFullscreen();
@@ -1339,9 +1320,9 @@
                     elem.msRequestFullscreen();
                 }
             } else {
-                // Exit fullscreen
                 exitFullscreen();
             }
+            closeMenu();
         }
 
         function exitFullscreen() {
@@ -1362,8 +1343,6 @@
 
         function minimizeWindow() {
             updateStatusText('Minimize functionality not available in browser environment');
-            // In a real application, this would minimize the window
-            // For demonstration, we'll just show a message
             setTimeout(() => {
                 updateStatusText('Ready');
             }, 3000);
@@ -1371,57 +1350,58 @@
 
         // Event Listeners
         document.addEventListener('click', (event) => {
-            // Close dropdown menu when clicking outside
-            if (!event.target.closest('.menu-btn')) {
-                const menu = document.getElementById('browserMenu');
-                if (menu.classList.contains('show')) {
-                    toggleMenu();
-                }
+            const menu = document.getElementById('browserMenu');
+            if (!event.target.closest('.menu-btn') && !event.target.closest('.dropdown-menu') && menu.classList.contains('show')) {
+                closeMenu();
             }
-            
-            // Close panels when clicking overlay
             if (event.target.id === 'panelOverlay') {
                 closeAllPanels();
             }
         });
 
-        // Handle fullscreen change events
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
         document.addEventListener('msfullscreenchange', handleFullscreenChange);
 
         function handleFullscreenChange() {
             const isCurrentlyFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-            
+            const contentArea = document.querySelector('.content-area');
+            const webpageFrame = document.querySelector('.webpage-frame');
             if (isCurrentlyFullscreen && !isFullscreen) {
-                // Entering fullscreen
                 isFullscreen = true;
                 document.body.classList.add('fullscreen');
                 document.getElementById('exitFullscreenBtn').style.display = 'block';
                 updateStatusText('Entered fullscreen mode');
-                
-                // Hide header after a delay
                 setTimeout(() => {
                     if (isFullscreen) {
                         document.getElementById('browserHeader').classList.add('fullscreen-hidden');
                         document.getElementById('fullscreenToggle').classList.add('visible');
                         isHeaderVisible = false;
+                        contentArea.style.height = '100vh';
+                        contentArea.style.width = '100vw';
+                        contentArea.style.top = '0';
+                        webpageFrame.style.height = '100vh';
+                        webpageFrame.style.width = '100vw';
+                        webpageFrame.style.top = '0';
                     }
                 }, 3000);
-                
             } else if (!isCurrentlyFullscreen && isFullscreen) {
-                // Exiting fullscreen
                 isFullscreen = false;
                 document.body.classList.remove('fullscreen');
                 document.getElementById('exitFullscreenBtn').style.display = 'none';
                 document.getElementById('browserHeader').classList.remove('fullscreen-hidden');
                 document.getElementById('fullscreenToggle').classList.remove('visible');
                 isHeaderVisible = true;
+                contentArea.style.height = '';
+                contentArea.style.width = '';
+                contentArea.style.top = '';
+                webpageFrame.style.height = '';
+                webpageFrame.style.width = '';
+                webpageFrame.style.top = '';
                 updateStatusText('Exited fullscreen mode');
             }
         }
 
-        // Keyboard shortcuts
         document.addEventListener('keydown', (event) => {
             if (event.ctrlKey || event.metaKey) {
                 switch (event.key) {
@@ -1459,12 +1439,10 @@
                         break;
                 }
             }
-            
             if (event.key === 'F11') {
                 event.preventDefault();
                 toggleFullscreen();
             }
-            
             if (event.key === 'Escape') {
                 closeAllPanels();
                 if (isFullscreen) {
@@ -1473,17 +1451,24 @@
             }
         });
 
-        // Initialize the browser when page loads
         window.addEventListener('load', initBrowser);
 
-        // Handle window resize
         window.addEventListener('resize', () => {
             if (p5Instance) {
                 p5Instance.resizeCanvas(window.innerWidth, window.innerHeight);
             }
+            if (isFullscreen) {
+                const contentArea = document.querySelector('.content-area');
+                const webpageFrame = document.querySelector('.webpage-frame');
+                contentArea.style.height = '100vh';
+                contentArea.style.width = '100vw';
+                contentArea.style.top = '0';
+                webpageFrame.style.height = '100vh';
+                webpageFrame.style.width = '100vw';
+                webpageFrame.style.top = '0';
+            }
         });
 
-        // Prevent default drag behavior
         document.addEventListener('dragover', (e) => e.preventDefault());
         document.addEventListener('drop', (e) => e.preventDefault());
     </script>
