@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>P.O.P.S. Custom Browser</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body { margin: 0; font-family: Arial; }
+        #toolbar { background: #eee; padding: 10px; }
+        #content { height: calc(100vh - 50px); }
+        iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <input id="address" type="text" placeholder="Enter URL or search" style="width: 300px;">
+        <button onclick="goBack()">Back</button>
+        <button onclick="goForward()">Forward</button>
+        <button onclick="refresh()">Refresh</button>
+        <button onclick="newTab()">New Tab</button>
+        <button onclick="newWindow()">New Window</button>
+        <button onclick="toggleFullscreen()">Fullscreen</button>
+        <select id="history"></select>
+    </div>
+    <div id="tabs"></div> <!-- Tab buttons here -->
+    <div id="content"><iframe id="viewer"></iframe></div>
+
+    <script>
+        let historyStack = [];
+        let currentTab = 0;
+        let tabs = [{ iframe: document.getElementById('viewer'), history: [], index: -1 }];
+
+        function loadPage(url) {
+            if (!url.startsWith('http')) url = 'https://' + url;
+            tabs[currentTab].iframe.src = url;
+            tabs[currentTab].history.push(url);
+            tabs[currentTab].index++;
+            updateHistoryMenu();
+        }
+
+        document.getElementById('address').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loadPage(e.target.value);
+        });
+
+        function goBack() {
+            if (tabs[currentTab].index > 0) {
+                tabs[currentTab].index--;
+                tabs[currentTab].iframe.src = tabs[currentTab].history[tabs[currentTab].index];
+            }
+        }
+
+        function goForward() {
+            if (tabs[currentTab].index < tabs[currentTab].history.length - 1) {
+                tabs[currentTab].index++;
+                tabs[currentTab].iframe.src = tabs[currentTab].history[tabs[currentTab].index];
+            }
+        }
+
+        function refresh() {
+            tabs[currentTab].iframe.src = tabs[currentTab].iframe.src;
+        }
+
+        function newTab() {
+            // Create new iframe, add tab button, switch to it
+            let newIframe = document.createElement('iframe');
+            document.getElementById('content').appendChild(newIframe);
+            newIframe.style.display = 'none';
+            tabs.push({ iframe: newIframe, history: [], index: -1 });
+            currentTab = tabs.length - 1;
+            switchTab(currentTab);
+        }
+
+        function switchTab(tabIndex) {
+            tabs.forEach((tab, i) => tab.iframe.style.display = (i === tabIndex) ? 'block' : 'none');
+            currentTab = tabIndex;
+        }
+
+        function newWindow() {
+            window.open(window.location.href, '_blank');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+        }
+
+        function updateHistoryMenu() {
+            let select = document.getElementById('history');
+            select.innerHTML = '';
+            tabs[currentTab].history.forEach((url, i) => {
+                let option = document.createElement('option');
+                option.value = i;
+                option.text = url;
+                select.add(option);
+            });
+            select.onchange = (e) => {
+                tabs[currentTab].index = parseInt(e.target.value);
+                tabs[currentTab].iframe.src = tabs[currentTab].history[tabs[currentTab].index];
+            };
+        }
+
+        // P5.js for skeuomorphic UI (example: draw custom button)
+        function setup() {
+            let canvas = createCanvas(100, 50);
+            canvas.parent('toolbar'); // Attach to toolbar for a custom button
+        }
+
+        function draw() {
+            background(220);
+            // Draw skeuomorphic back button example
+            fill(200);
+            rect(10, 10, 80, 30, 5); // Rounded button
+            text('Back', 30, 25);
+        }
+
+        // Example scraping function (for same-origin or CORS-enabled)
+        async function scrapeAndDisplay(url) {
+            try {
+                let res = await fetch(url);
+                let text = await res.text();
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(text, 'text/html');
+                // Grab images
+                let images = doc.querySelectorAll('img');
+                images.forEach(img => {
+                    let newImg = document.createElement('img');
+                    newImg.src = img.src;
+                    document.body.appendChild(newImg); // Display in custom view
+                });
+                // Similar for videos
+            } catch (e) {
+                console.error('Scraping error:', e);
+            }
+        }
+    </script>
+</body>
+</html>
