@@ -290,7 +290,6 @@
             transition: all 0.3s ease-in-out;
         }
 
-        /* Fullscreen-specific styles for content area and iframe */
         .fullscreen .content-area {
             position: absolute;
             top: 0;
@@ -326,6 +325,36 @@
             padding: 0 10px;
             font-size: 11px;
             color: #666;
+        }
+
+        .status-bar-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .open-in-tab-btn {
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #aaa;
+            background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+            cursor: pointer;
+            font-size: 11px;
+            color: #333;
+            transition: all 0.2s;
+            display: none;
+        }
+
+        .open-in-tab-btn:hover {
+            background: linear-gradient(to bottom, #fff, #f0f0f0);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .open-in-tab-btn:active {
+            transform: translateY(0);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
         }
 
         .dropdown-menu {
@@ -577,13 +606,11 @@
             z-index: 100;
         }
 
-        /* Fullscreen specific styles */
         .fullscreen .browser-window {
             border-radius: 0;
             box-shadow: none;
         }
 
-        /* Overlay for closing panels */
         .panel-overlay {
             position: fixed;
             top: 0;
@@ -661,23 +688,20 @@
                 </div>
             </div>
 
-            <div class="tab-bar">
-                <div class="tab active" data-tab-id="1">
-                    <div class="tab-favicon">🌐</div>
-                    <div class="tab-title">New Tab</div>
-                    <div class="tab-close" onclick="closeTab(1)">×</div>
-                </div>
+            <div class="tab-bar" id="tabBar">
                 <button class="new-tab-btn" onclick="newTab()">+</button>
             </div>
         </div>
 
-        <div class="content-area">
+        <div class="content-area" id="contentArea">
             <div class="loading-bar" id="loadingBar" style="width: 0%"></div>
-            <iframe class="webpage-frame" id="webFrame" src="about:blank"></iframe>
         </div>
 
         <div class="status-bar" id="statusBar">
-            <span id="statusText">Ready</span>
+            <div class="status-bar-content">
+                <span id="statusText">Ready</span>
+                <button class="open-in-tab-btn" id="openInTabBtn" onclick="openInNewTab()">Open in New Tab</button>
+            </div>
         </div>
 
         <div class="history-panel" id="historyPanel">
@@ -694,32 +718,32 @@
                 <button class="close-panel-btn" onclick="hideBookmarks()">×</button>
             </div>
             <div id="bookmarksList">
-                <div class="bookmark-item" onclick="navigateToUrl('https://google.com')">
+                <div class="bookmark-item" onclick="navigateToUrl('https://charlesmack.github.io/mobile/')">
                     <span class="bookmark-favicon">🔍</span>
                     <div class="bookmark-info">
-                        <div class="bookmark-title">Google</div>
-                        <div class="bookmark-url">https://google.com</div>
+                        <div class="bookmark-title">POPS Mobile</div>
+                        <div class="bookmark-url">https://charlesmack.github.io/mobile/</div>
                     </div>
                 </div>
-                <div class="bookmark-item" onclick="navigateToUrl('https://youtube.com')">
+                <div class="bookmark-item" onclick="navigateToUrl('https://charlesmack.github.io/system/')">
                     <span class="bookmark-favicon">📺</span>
                     <div class="bookmark-info">
-                        <div class="bookmark-title">YouTube</div>
-                        <div class="bookmark-url">https://youtube.com</div>
+                        <div class="bookmark-title">POPSTube</div>
+                        <div class="bookmark-url">https://charlesmack.github.io/system/</div>
                     </div>
                 </div>
-                <div class="bookmark-item" onclick="navigateToUrl('https://github.com')">
+                <div class="bookmark-item" onclick="navigateToUrl('https://charlesmack.github.io/command/appdrops/')">
                     <span class="bookmark-favicon">💻</span>
                     <div class="bookmark-info">
-                        <div class="bookmark-title">GitHub</div>
-                        <div class="bookmark-url">https://github.com</div>
+                        <div class="bookmark-title">Command Center</div>
+                        <div class="bookmark-url">https://charlesmack.github.io/command/appdrops/</div>
                     </div>
                 </div>
-                <div class="bookmark-item" onclick="navigateToUrl('https://stackoverflow.com')">
+                <div class="bookmark-item" onclick="navigateToUrl('https://charlesmack.github.io/pops-media-hub/')">
                     <span class="bookmark-favicon">💬</span>
                     <div class="bookmark-info">
-                        <div class="bookmark-title">Stack Overflow</div>
-                        <div class="bookmark-url">https://stackoverflow.com</div>
+                        <div class="bookmark-title">POPS Media Hub</div>
+                        <div class="bookmark-url">https://charlesmack.github.io/pops-media-hub/</div>
                     </div>
                 </div>
             </div>
@@ -768,13 +792,12 @@
     <script>
         let tabs = [];
         let activeTabId = 1;
-        let tabIdCounter = 1;
-        let history = [];
-        let historyIndex = -1;
+        let tabIdCounter = 0;
+        let globalHistory = [];
         let isFullscreen = false;
         let p5Instance;
-        let fullscreenTimeout;
         let isHeaderVisible = true;
+        let currentUrl = '';
 
         // Initialize P5.js for visual effects
         function initP5() {
@@ -799,12 +822,15 @@
                 
                 p.draw = function() {
                     p.clear();
+                    
                     for(let particle of particles) {
                         p.fill(255, 255, 255, particle.alpha);
                         p.noStroke();
                         p.circle(particle.x, particle.y, 3);
+                        
                         particle.x += particle.vx;
                         particle.y += particle.vy;
+                        
                         if(particle.x < 0 || particle.x > p.width) particle.vx *= -1;
                         if(particle.y < 0 || particle.y > p.height) particle.vy *= -1;
                     }
@@ -820,63 +846,156 @@
 
         // Initialize the browser
         function initBrowser() {
-            tabs.push({
-                id: 1,
-                title: "New Tab",
-                url: "about:blank",
-                favicon: "🌐"
-            });
-            
-            loadStartPage();
             initP5();
+            newTab(); // Create the first tab
             updateNavigationButtons();
-            setupFullscreenBehavior();
         }
 
-        function setupFullscreenBehavior() {
-            const browserHeader = document.getElementById('browserHeader');
-            const fullscreenToggle = document.getElementById('fullscreenToggle');
-            let mouseTimer;
+        function createIframeForTab() {
+            const iframe = document.createElement('iframe');
+            iframe.className = 'webpage-frame';
+            iframe.style.display = 'none';
+            iframe.src = 'about:blank';
+            document.getElementById('contentArea').appendChild(iframe);
+            setupIframeErrorHandling(iframe);
+            return iframe;
+        }
 
-            document.addEventListener('mousemove', (e) => {
-                if (!isFullscreen) return;
-
-                clearTimeout(mouseTimer);
-
-                if (e.clientY <= 100) {
-                    if (!isHeaderVisible) {
-                        browserHeader.classList.remove('fullscreen-hidden');
-                        fullscreenToggle.classList.remove('visible');
-                        isHeaderVisible = true;
+        function setupIframeErrorHandling(iframe) {
+            iframe.onerror = () => {
+                handleIframeError('Failed to load the page due to a server or network error.');
+            };
+            iframe.onload = () => {
+                setTimeout(() => {
+                    try {
+                        const doc = iframe.contentDocument || iframe.contentWindow.document;
+                        if (!doc || !doc.body || doc.body.innerHTML.trim() === '' || doc.title === '') {
+                            handleIframeError('The page appears to be empty or blocked.');
+                        } else {
+                            hideOpenInTabButton();
+                            // Update tab title with actual page title if possible
+                            const currentTab = getCurrentTab();
+                            if (currentTab && currentTab.iframe === iframe) {
+                                currentTab.title = doc.title || currentTab.url;
+                                updateTabTitle(currentTab.title);
+                            }
+                        }
+                    } catch (e) {
+                        handleIframeError('This site cannot be loaded due to restrictions (e.g., X-Frame-Options).');
                     }
-                } else {
-                    mouseTimer = setTimeout(() => {
-                        if (isFullscreen) {
-                            browserHeader.classList.add('fullscreen-hidden');
-                            fullscreenToggle.classList.add('visible');
-                            isHeaderVisible = false;
-                        }
-                    }, 2000);
-                }
-            });
+                }, 5000);
+            };
+        }
 
-            fullscreenToggle.addEventListener('click', () => {
-                if (!isHeaderVisible) {
-                    browserHeader.classList.remove('fullscreen-hidden');
-                    fullscreenToggle.classList.remove('visible');
-                    isHeaderVisible = true;
-                    setTimeout(() => {
-                        if (isFullscreen) {
-                            browserHeader.classList.add('fullscreen-hidden');
-                            fullscreenToggle.classList.add('visible');
-                            isHeaderVisible = false;
-                        }
-                    }, 3000);
+        function handleIframeError(message) {
+            const statusText = document.getElementById('statusText');
+            const openInTabBtn = document.getElementById('openInTabBtn');
+            statusText.textContent = `${message} Try opening in a new tab or contact the site owner.`;
+            openInTabBtn.style.display = 'inline-block';
+            setTimeout(() => {
+                if (openInTabBtn.style.display === 'inline-block') {
+                    openInTabBtn.style.display = 'none';
+                    updateStatusText('Ready');
                 }
-            });
+            }, 10000);
+        }
+
+        function openInNewTab() {
+            if (currentUrl) {
+                window.open(currentUrl, '_blank');
+                updateStatusText(`Opened ${currentUrl} in a new tab`);
+                document.getElementById('openInTabBtn').style.display = 'none';
+            }
+        }
+
+        function hideOpenInTabButton() {
+            const openInTabBtn = document.getElementById('openInTabBtn');
+            openInTabBtn.style.display = 'none';
+            updateStatusText('Ready');
+        }
+
+        function getCurrentTab() {
+            return tabs.find(t => t.id === activeTabId);
+        }
+
+        function newTab() {
+            tabIdCounter++;
+            const newTabId = tabIdCounter;
+            // Prevent duplicate tab IDs
+            if (tabs.some(t => t.id === newTabId)) {
+                console.warn(`Tab ID ${newTabId} already exists, skipping creation.`);
+                return;
+            }
+            const newIframe = createIframeForTab();
+            const newTab = {
+                id: newTabId,
+                title: "New Tab",
+                url: "about:blank",
+                favicon: "🌐",
+                iframe: newIframe,
+                history: [],
+                historyIndex: -1
+            };
+            tabs.push(newTab);
+            const tabBar = document.getElementById('tabBar');
+            const newTabBtn = document.querySelector('.new-tab-btn');
+            const tabElement = document.createElement('div');
+            tabElement.className = 'tab';
+            tabElement.setAttribute('data-tab-id', newTabId);
+            tabElement.innerHTML = `
+                <div class="tab-favicon">🌐</div>
+                <div class="tab-title">New Tab</div>
+                <div class="tab-close" onclick="closeTab(${newTabId})">×</div>
+            `;
+            tabElement.onclick = () => switchToTab(newTabId);
+            tabBar.insertBefore(tabElement, newTabBtn);
+            switchToTab(newTabId);
+            loadStartPage();
+            updateStatusText('New tab opened');
+            closeMenu();
+        }
+
+        function closeTab(tabId) {
+            event.stopPropagation();
+            if (tabs.length === 1) {
+                updateStatusText('Cannot close the last tab');
+                return;
+            }
+            const tabIndex = tabs.findIndex(t => t.id === tabId);
+            if (tabIndex !== -1) {
+                const tabToClose = tabs[tabIndex];
+                tabToClose.iframe.remove();
+                tabs.splice(tabIndex, 1);
+                document.querySelector(`.tab[data-tab-id="${tabId}"]`).remove();
+                if (activeTabId === tabId) {
+                    const newActiveIndex = tabIndex > 0 ? tabIndex - 1 : 0;
+                    switchToTab(tabs[newActiveIndex].id);
+                }
+                updateStatusText('Tab closed');
+            }
+        }
+
+        function switchToTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            const tabElement = document.querySelector(`.tab[data-tab-id="${tabId}"]`);
+            if (tabElement) {
+                tabElement.classList.add('active');
+            }
+            tabs.forEach(t => t.iframe.style.display = 'none');
+            activeTabId = tabId;
+            const tab = getCurrentTab();
+            if (tab) {
+                tab.iframe.style.display = 'block';
+                document.getElementById('addressBar').value = tab.url;
+                currentUrl = tab.url;
+                updateStatusText(`Switched to tab: ${tab.title}`);
+                updateNavigationButtons();
+            }
         }
 
         function loadStartPage() {
+            const currentTab = getCurrentTab();
+            if (!currentTab) return;
             const startPageHTML = `
                 <html>
                 <head>
@@ -942,21 +1061,21 @@
                     <p class="subtitle">Your gateway to the web</p>
                     <input type="text" class="search-box" placeholder="Search or enter URL..." onkeydown="if(event.key==='Enter') parent.navigateToUrl(this.value)">
                     <div class="quick-links">
-                        <div class="link-card" onclick="parent.navigateToUrl('https://google.com')">
+                        <div class="link-card" onclick="parent.navigateToUrl('https://charlesmack.github.io/mobile/')">
                             <div style="font-size: 24px; margin-bottom: 10px;">🔍</div>
-                            <div>Google</div>
+                            <div>POPS Mobile</div>
                         </div>
-                        <div class="link-card" onclick="parent.navigateToUrl('https://youtube.com')">
+                        <div class="link-card" onclick="parent.navigateToUrl('https://charlesmack.github.io/system/')">
                             <div style="font-size: 24px; margin-bottom: 10px;">📺</div>
-                            <div>YouTube</div>
+                            <div>POPSTube</div>
                         </div>
-                        <div class="link-card" onclick="parent.navigateToUrl('https://github.com')">
+                        <div class="link-card" onclick="parent.navigateToUrl('https://charlesmack.github.io/command/appdrops/')">
                             <div style="font-size: 24px; margin-bottom: 10px;">💻</div>
-                            <div>GitHub</div>
+                            <div>Command Center</div>
                         </div>
-                        <div class="link-card" onclick="parent.navigateToUrl('https://charlesmack.github.io/web-browser/')">
+                        <div class="link-card" onclick="parent.navigateToUrl('https://charlesmack.github.io/pops-media-hub/')">
                             <div style="font-size: 24px; margin-bottom: 10px;">🏠</div>
-                            <div>Original Browser</div>
+                            <div>POPS Media Hub</div>
                         </div>
                     </div>
                 </body>
@@ -964,7 +1083,14 @@
             `;
             const blob = new Blob([startPageHTML], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
-            document.getElementById('webFrame').src = url;
+            currentTab.iframe.src = url;
+            currentTab.url = 'about:blank';
+            currentTab.title = 'New Tab';
+            currentTab.history = [];
+            currentTab.historyIndex = -1;
+            document.getElementById('addressBar').value = '';
+            updateTabTitle(currentTab.title);
+            hideOpenInTabButton();
         }
 
         function handleAddressBar(event) {
@@ -984,25 +1110,35 @@
                     url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
                 }
             }
+            const currentTab = getCurrentTab();
+            if (!currentTab) return;
+            currentUrl = url;
             showLoadingProgress();
             document.getElementById('addressBar').value = url;
-            if (historyIndex < history.length - 1) {
-                history = history.slice(0, historyIndex + 1);
+            if (currentTab.historyIndex < currentTab.history.length - 1) {
+                currentTab.history = currentTab.history.slice(0, currentTab.historyIndex + 1);
             }
-            history.push({
+            currentTab.history.push({
                 url: url,
                 title: url,
                 timestamp: new Date()
             });
-            historyIndex = history.length - 1;
+            currentTab.historyIndex = currentTab.history.length - 1;
+            globalHistory.push({
+                url: url,
+                title: url,
+                timestamp: new Date()
+            });
             updateNavigationButtons();
             updateHistoryPanel();
             try {
-                document.getElementById('webFrame').src = url;
-                updateTabTitle(url);
+                currentTab.iframe.src = url;
+                currentTab.url = url;
+                currentTab.title = url;
+                updateTabTitle(currentTab.title);
                 updateStatusText('Loading ' + url);
             } catch (error) {
-                updateStatusText('Error loading page: ' + error.message);
+                handleIframeError('Error loading page: ' + error.message);
             }
         }
 
@@ -1026,112 +1162,67 @@
         }
 
         function goBack() {
-            if (historyIndex > 0) {
-                historyIndex--;
-                const item = history[historyIndex];
+            const currentTab = getCurrentTab();
+            if (currentTab && currentTab.historyIndex > 0) {
+                currentTab.historyIndex--;
+                const item = currentTab.history[currentTab.historyIndex];
+                currentTab.iframe.src = item.url;
+                currentTab.url = item.url;
+                currentTab.title = item.title;
                 document.getElementById('addressBar').value = item.url;
-                document.getElementById('webFrame').src = item.url;
+                updateTabTitle(item.title);
                 updateNavigationButtons();
                 updateStatusText('Going back to ' + item.title);
             }
         }
 
         function goForward() {
-            if (historyIndex < history.length - 1) {
-                historyIndex++;
-                const item = history[historyIndex];
+            const currentTab = getCurrentTab();
+            if (currentTab && currentTab.historyIndex < currentTab.history.length - 1) {
+                currentTab.historyIndex++;
+                const item = currentTab.history[currentTab.historyIndex];
+                currentTab.iframe.src = item.url;
+                currentTab.url = item.url;
+                currentTab.title = item.title;
                 document.getElementById('addressBar').value = item.url;
-                document.getElementById('webFrame').src = item.url;
+                updateTabTitle(item.title);
                 updateNavigationButtons();
                 updateStatusText('Going forward to ' + item.title);
             }
         }
 
         function refreshPage() {
-            const frame = document.getElementById('webFrame');
-            frame.src = frame.src;
-            updateStatusText('Refreshing page...');
-            showLoadingProgress();
+            const currentTab = getCurrentTab();
+            if (currentTab) {
+                currentTab.iframe.src = currentTab.url;
+                updateStatusText('Refreshing page...');
+                showLoadingProgress();
+            }
         }
 
         function goHome() {
             loadStartPage();
-            document.getElementById('addressBar').value = '';
             updateStatusText('Home');
         }
 
         function updateNavigationButtons() {
-            document.getElementById('backBtn').disabled = historyIndex <= 0;
-            document.getElementById('forwardBtn').disabled = historyIndex >= history.length - 1;
+            const currentTab = getCurrentTab();
+            if (currentTab) {
+                document.getElementById('backBtn').disabled = currentTab.historyIndex <= 0;
+                document.getElementById('forwardBtn').disabled = currentTab.historyIndex >= currentTab.history.length - 1;
+            }
         }
 
-        function updateTabTitle(url) {
+        function updateTabTitle(title) {
             const tab = document.querySelector(`.tab[data-tab-id="${activeTabId}"] .tab-title`);
             if (tab) {
-                const title = url.length > 25 ? url.substring(0, 22) + '...' : url;
-                tab.textContent = title;
+                const shortTitle = title.length > 25 ? title.substring(0, 22) + '...' : title;
+                tab.textContent = shortTitle;
             }
         }
 
         function updateStatusText(text) {
             document.getElementById('statusText').textContent = text;
-        }
-
-        function newTab() {
-            tabIdCounter++;
-            const newTabId = tabIdCounter;
-            tabs.push({
-                id: newTabId,
-                title: "New Tab",
-                url: "about:blank",
-                favicon: "🌐"
-            });
-            const tabBar = document.querySelector('.tab-bar');
-            const newTabBtn = document.querySelector('.new-tab-btn');
-            const tabElement = document.createElement('div');
-            tabElement.className = 'tab';
-            tabElement.setAttribute('data-tab-id', newTabId);
-            tabElement.innerHTML = `
-                <div class="tab-favicon">🌐</div>
-                <div class="tab-title">New Tab</div>
-                <div class="tab-close" onclick="closeTab(${newTabId})">×</div>
-            `;
-            tabElement.onclick = () => switchToTab(newTabId);
-            tabBar.insertBefore(tabElement, newTabBtn);
-            switchToTab(newTabId);
-            loadStartPage();
-            updateStatusText('New tab opened');
-            closeMenu();
-        }
-
-        function closeTab(tabId) {
-            event.stopPropagation();
-            if (tabs.length === 1) {
-                updateStatusText('Cannot close the last tab');
-                return;
-            }
-            const tabIndex = tabs.findIndex(t => t.id === tabId);
-            if (tabIndex !== -1) {
-                tabs.splice(tabIndex, 1);
-                document.querySelector(`.tab[data-tab-id="${tabId}"]`).remove();
-                if (activeTabId === tabId) {
-                    const newActiveTab = tabs[Math.min(tabIndex, tabs.length - 1)];
-                    switchToTab(newActiveTab.id);
-                }
-                updateStatusText('Tab closed');
-            }
-        }
-
-        function switchToTab(tabId) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector(`.tab[data-tab-id="${tabId}"]`).classList.add('active');
-            activeTabId = tabId;
-            const tab = tabs.find(t => t.id === tabId);
-            if (tab) {
-                document.getElementById('addressBar').value = tab.url;
-                document.getElementById('webFrame').src = tab.url;
-                updateStatusText(`Switched to tab: ${tab.title}`);
-            }
         }
 
         function newWindow() {
@@ -1220,9 +1311,7 @@
 
         function showBookmarks() {
             closeMenu();
-            const panel =一半
-
-            document.getElementById('bookmarksPanel');
+            const panel = document.getElementById('bookmarksPanel');
             const overlay = document.getElementById('panelOverlay');
             closeAllPanels();
             panel.classList.add('open');
@@ -1275,11 +1364,11 @@
         function updateHistoryPanel() {
             const historyList = document.getElementById('historyList');
             historyList.innerHTML = '';
-            if (history.length === 0) {
+            if (globalHistory.length === 0) {
                 historyList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No history items</div>';
                 return;
             }
-            history.slice(-50).reverse().forEach(item => {
+            globalHistory.slice(-50).reverse().forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'history-item';
                 div.innerHTML = `
@@ -1365,13 +1454,13 @@
 
         function handleFullscreenChange() {
             const isCurrentlyFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-            const contentArea = document.querySelector('.content-area');
-            const webpageFrame = document.querySelector('.webpage-frame');
+            const contentArea = document.getElementById('contentArea');
             if (isCurrentlyFullscreen && !isFullscreen) {
                 isFullscreen = true;
                 document.body.classList.add('fullscreen');
                 document.getElementById('exitFullscreenBtn').style.display = 'block';
                 updateStatusText('Entered fullscreen mode');
+                
                 setTimeout(() => {
                     if (isFullscreen) {
                         document.getElementById('browserHeader').classList.add('fullscreen-hidden');
@@ -1380,11 +1469,15 @@
                         contentArea.style.height = '100vh';
                         contentArea.style.width = '100vw';
                         contentArea.style.top = '0';
-                        webpageFrame.style.height = '100vh';
-                        webpageFrame.style.width = '100vw';
-                        webpageFrame.style.top = '0';
+                        const currentTab = getCurrentTab();
+                        if (currentTab) {
+                            currentTab.iframe.style.height = '100vh';
+                            currentTab.iframe.style.width = '100vw';
+                            currentTab.iframe.style.top = '0';
+                        }
                     }
                 }, 3000);
+                
             } else if (!isCurrentlyFullscreen && isFullscreen) {
                 isFullscreen = false;
                 document.body.classList.remove('fullscreen');
@@ -1395,59 +1488,48 @@
                 contentArea.style.height = '';
                 contentArea.style.width = '';
                 contentArea.style.top = '';
-                webpageFrame.style.height = '';
-                webpageFrame.style.width = '';
-                webpageFrame.style.top = '';
+                const currentTab = getCurrentTab();
+                if (currentTab) {
+                    currentTab.iframe.style.height = '';
+                    currentTab.iframe.style.width = '';
+                    currentTab.iframe.style.top = '';
+                }
                 updateStatusText('Exited fullscreen mode');
             }
         }
 
-        document.addEventListener('keydown', (event) => {
-            if (event.ctrlKey || event.metaKey) {
-                switch (event.key) {
-                    case 't':
-                        event.preventDefault();
-                        newTab();
-                        break;
-                    case 'w':
-                        event.preventDefault();
-                        if (tabs.length > 1) {
-                            closeTab(activeTabId);
-                        }
-                        break;
-                    case 'r':
-                        event.preventDefault();
-                        refreshPage();
-                        break;
-                    case 'l':
-                        event.preventDefault();
-                        document.getElementById('addressBar').focus();
-                        document.getElementById('addressBar').select();
-                        break;
-                    case 'h':
-                        event.preventDefault();
-                        toggleHistory();
-                        break;
-                    case 'b':
-                        event.preventDefault();
-                        showBookmarks();
-                        break;
-                    case 'F11':
-                    case 'f11':
-                        event.preventDefault();
-                        toggleFullscreen();
-                        break;
+        document.addEventListener('mousemove', (e) => {
+            if (!isFullscreen) return;
+            clearTimeout(fullscreenTimeout);
+            if (e.clientY <= 100) {
+                if (!isHeaderVisible) {
+                    document.getElementById('browserHeader').classList.remove('fullscreen-hidden');
+                    document.getElementById('fullscreenToggle').classList.remove('visible');
+                    isHeaderVisible = true;
                 }
+            } else {
+                fullscreenTimeout = setTimeout(() => {
+                    if (isFullscreen) {
+                        document.getElementById('browserHeader').classList.add('fullscreen-hidden');
+                        document.getElementById('fullscreenToggle').classList.add('visible');
+                        isHeaderVisible = false;
+                    }
+                }, 2000);
             }
-            if (event.key === 'F11') {
-                event.preventDefault();
-                toggleFullscreen();
-            }
-            if (event.key === 'Escape') {
-                closeAllPanels();
-                if (isFullscreen) {
-                    exitFullscreen();
-                }
+        });
+
+        document.getElementById('fullscreenToggle').addEventListener('click', () => {
+            if (!isHeaderVisible) {
+                document.getElementById('browserHeader').classList.remove('fullscreen-hidden');
+                document.getElementById('fullscreenToggle').classList.remove('visible');
+                isHeaderVisible = true;
+                fullscreenTimeout = setTimeout(() => {
+                    if (isFullscreen) {
+                        document.getElementById('browserHeader').classList.add('fullscreen-hidden');
+                        document.getElementById('fullscreenToggle').classList.add('visible');
+                        isHeaderVisible = false;
+                    }
+                }, 3000);
             }
         });
 
@@ -1458,14 +1540,16 @@
                 p5Instance.resizeCanvas(window.innerWidth, window.innerHeight);
             }
             if (isFullscreen) {
-                const contentArea = document.querySelector('.content-area');
-                const webpageFrame = document.querySelector('.webpage-frame');
+                const contentArea = document.getElementById('contentArea');
                 contentArea.style.height = '100vh';
                 contentArea.style.width = '100vw';
                 contentArea.style.top = '0';
-                webpageFrame.style.height = '100vh';
-                webpageFrame.style.width = '100vw';
-                webpageFrame.style.top = '0';
+                const currentTab = getCurrentTab();
+                if (currentTab) {
+                    currentTab.iframe.style.height = '100vh';
+                    currentTab.iframe.style.width = '100vw';
+                    currentTab.iframe.style.top = '0';
+                }
             }
         });
 
