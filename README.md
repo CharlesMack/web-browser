@@ -1,5 +1,5 @@
 # web-browser
-P.O.P.S. Custom Browser: a custom web browser engine with a GUI built using HTML, JavaScript, and P5.js. This would focus on parsing, scraping, interpreting, and displaying web content—including images and videos—while leveraging the host browser's built-in APIs (like DOM parsing, fetch for resource grabbing, and media elements for playback).
+P.O.P.S. Custom Browser: a custom web browser engine with a GUI built using HTML, JavaScript, and Three.js. This would focus on parsing, scraping, interpreting, and displaying web content—including images and videos—while leveraging the host browser's built-in APIs (like DOM parsing, fetch for resource grabbing, and media elements for playback).
 
 P.O.P.S. Community Web Browser with all the features you requested! Here's what I've included:
 Key Features:
@@ -13,7 +13,7 @@ Status bar for feedback
 
 🎨 Visual Enhancements:
 
-P5.js integration with floating particle effects
+Three.js integration with floating particle effects
 Gradient backgrounds and modern UI elements
 Smooth animations and hover effects
 Professional window styling with shadows and borders
