@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>P.O.P.S. Community Web Browser</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -598,7 +598,7 @@
             left: 22px;
         }
 
-        .p5-canvas {
+        .three-canvas {
             position: absolute;
             top: 0;
             left: 0;
@@ -718,7 +718,7 @@
                 <button class="close-panel-btn" onclick="hideBookmarks()">×</button>
             </div>
             <div id="bookmarksList">
-                <div class="bookmark-item" onclick="navigateToUrl('https://charlesmack.github.io/mobile/')">
+                     <div class="bookmark-item" onclick="navigateToUrl('https://charlesmack.github.io/mobile/')">
                     <span class="bookmark-favicon">🔍</span>
                     <div class="bookmark-info">
                         <div class="bookmark-title">POPS Mobile</div>
@@ -795,58 +795,93 @@
         let tabIdCounter = 0;
         let globalHistory = [];
         let isFullscreen = false;
-        let p5Instance;
+        let threeScene, threeCamera, threeRenderer, particlesMesh;
         let isHeaderVisible = true;
         let currentUrl = '';
+        let fullscreenTimeout;
 
-        // Initialize P5.js for visual effects
-        function initP5() {
-            new p5((p) => {
-                let particles = [];
-                
-                p.setup = function() {
-                    let canvas = p.createCanvas(window.innerWidth, window.innerHeight);
-                    canvas.parent(document.body);
-                    canvas.class('p5-canvas');
-                    
-                    for(let i = 0; i < 50; i++) {
-                        particles.push({
-                            x: p.random(p.width),
-                            y: p.random(p.height),
-                            vx: p.random(-0.5, 0.5),
-                            vy: p.random(-0.5, 0.5),
-                            alpha: p.random(20, 60)
-                        });
+        // Initialize Three.js for visual effects
+        function initThree() {
+            // Creating scene
+            threeScene = new THREE.Scene();
+            
+            // Creating camera
+            threeCamera = new THREE.OrthographicCamera(
+                window.innerWidth / -2,
+                window.innerWidth / 2,
+                window.innerHeight / 2,
+                window.innerHeight / -2,
+                1,
+                1000
+            );
+            threeCamera.position.z = 10;
+
+            // Creating renderer
+            threeRenderer = new THREE.WebGLRenderer({ alpha: true });
+            threeRenderer.setSize(window.innerWidth, window.innerHeight);
+            threeRenderer.domElement.className = 'three-canvas';
+            document.body.appendChild(threeRenderer.domElement);
+
+            // Creating particles
+            const particlesCount = 50;
+            const positions = new Float32Array(particlesCount * 3);
+            const velocities = [];
+            for (let i = 0; i < particlesCount; i++) {
+                positions[i * 3] = Math.random() * window.innerWidth - window.innerWidth / 2;
+                positions[i * 3 + 1] = Math.random() * window.innerHeight - window.innerHeight / 2;
+                positions[i * 3 + 2] = 0;
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.5,
+                    y: (Math.random() - 0.5) * 0.5
+                });
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const material = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 3,
+                transparent: true,
+                opacity: 0.3
+            });
+            particlesMesh = new THREE.Points(geometry, material);
+            threeScene.add(particlesMesh);
+
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                const positions = particlesMesh.geometry.attributes.position.array;
+                for (let i = 0; i < particlesCount; i++) {
+                    positions[i * 3] += velocities[i].x;
+                    positions[i * 3 + 1] += velocities[i].y;
+
+                    // Bounce off edges
+                    if (positions[i * 3] < -window.innerWidth / 2 || positions[i * 3] > window.innerWidth / 2) {
+                        velocities[i].x *= -1;
                     }
-                };
-                
-                p.draw = function() {
-                    p.clear();
-                    
-                    for(let particle of particles) {
-                        p.fill(255, 255, 255, particle.alpha);
-                        p.noStroke();
-                        p.circle(particle.x, particle.y, 3);
-                        
-                        particle.x += particle.vx;
-                        particle.y += particle.vy;
-                        
-                        if(particle.x < 0 || particle.x > p.width) particle.vx *= -1;
-                        if(particle.y < 0 || particle.y > p.height) particle.vy *= -1;
+                    if (positions[i * 3 + 1] < -window.innerHeight / 2 || positions[i * 3 + 1] > window.innerHeight / 2) {
+                        velocities[i].y *= -1;
                     }
-                };
-                
-                p.windowResized = function() {
-                    p.resizeCanvas(window.innerWidth, window.innerHeight);
-                };
-                
-                p5Instance = p;
+                }
+                particlesMesh.geometry.attributes.position.needsUpdate = true;
+                threeRenderer.render(threeScene, threeCamera);
+            }
+            animate();
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                threeCamera.left = window.innerWidth / -2;
+                threeCamera.right = window.innerWidth / 2;
+                threeCamera.top = window.innerHeight / 2;
+                threeCamera.bottom = window.innerHeight / -2;
+                threeCamera.updateProjectionMatrix();
+                threeRenderer.setSize(window.innerWidth, window.innerHeight);
             });
         }
 
         // Initialize the browser
         function initBrowser() {
-            initP5();
+            initThree();
             newTab(); // Create the first tab
             updateNavigationButtons();
         }
@@ -1055,7 +1090,7 @@
                         }
                     </style>
                 </head>
-                <body>
+               <body>
                     <div class="logo">🌐</div>
                     <h1 class="title">P.O.P.S. Community Browser</h1>
                     <p class="subtitle">Your gateway to the web</p>
@@ -1534,24 +1569,6 @@
         });
 
         window.addEventListener('load', initBrowser);
-
-        window.addEventListener('resize', () => {
-            if (p5Instance) {
-                p5Instance.resizeCanvas(window.innerWidth, window.innerHeight);
-            }
-            if (isFullscreen) {
-                const contentArea = document.getElementById('contentArea');
-                contentArea.style.height = '100vh';
-                contentArea.style.width = '100vw';
-                contentArea.style.top = '0';
-                const currentTab = getCurrentTab();
-                if (currentTab) {
-                    currentTab.iframe.style.height = '100vh';
-                    currentTab.iframe.style.width = '100vw';
-                    currentTab.iframe.style.top = '0';
-                }
-            }
-        });
 
         document.addEventListener('dragover', (e) => e.preventDefault());
         document.addEventListener('drop', (e) => e.preventDefault());
