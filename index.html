@@ -1,136 +1,858 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>P.O.P.S. Custom Browser</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P.O.P.S. Community Web Browser</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
     <style>
-        body { margin: 0; font-family: Arial; }
-        #toolbar { background: #eee; padding: 10px; }
-        #content { height: calc(100vh - 50px); }
-        iframe { width: 100%; height: 100%; border: none; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .browser-window {
+            width: 100vw;
+            height: 100vh;
+            background: #f0f0f0;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .title-bar {
+            height: 32px;
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-bottom: 1px solid #aaa;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            justify-content: space-between;
+        }
+
+        .window-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid #999;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .close-btn { background: linear-gradient(to bottom, #ff5f57, #ff3b30); }
+        .minimize-btn { background: linear-gradient(to bottom, #ffbd2e, #ff9500); }
+        .maximize-btn { background: linear-gradient(to bottom, #28cd41, #28a745); }
+
+        .toolbar {
+            height: 50px;
+            background: linear-gradient(to bottom, #f5f5f5, #e5e5e5);
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid #aaa;
+            background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #333;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: linear-gradient(to bottom, #fff, #f0f0f0);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .address-bar-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #aaa;
+            border-radius: 20px;
+            padding: 0 12px;
+            height: 36px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .address-bar {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            background: transparent;
+        }
+
+        .security-icon {
+            color: #28a745;
+            margin-right: 8px;
+        }
+
+        .menu-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            border: 1px solid #aaa;
+            background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .tab-bar {
+            height: 40px;
+            background: linear-gradient(to bottom, #e8e8e8, #d8d8d8);
+            border-bottom: 1px solid #bbb;
+            display: flex;
+            align-items: flex-end;
+            padding: 0 10px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            min-width: 180px;
+            max-width: 240px;
+            height: 32px;
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border: 1px solid #aaa;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            margin-right: 2px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom: 1px solid white;
+            z-index: 1;
+            margin-bottom: -1px;
+        }
+
+        .tab-favicon {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+
+        .tab-title {
+            flex: 1;
+            font-size: 13px;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tab-close {
+            width: 16px;
+            height: 16px;
+            margin-left: 8px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .tab-close:hover {
+            background: #ff5f57;
+            color: white;
+        }
+
+        .new-tab-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid #aaa;
+            background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #333;
+            margin-left: 5px;
+        }
+
+        .new-tab-btn:hover {
+            background: linear-gradient(to bottom, #fff, #f0f0f0);
+        }
+
+        .content-area {
+            flex: 1;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .webpage-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .loading-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: #4285f4;
+            transition: width 0.3s;
+            z-index: 1000;
+        }
+
+        .status-bar {
+            height: 24px;
+            background: linear-gradient(to bottom, #e8e8e8, #d8d8d8);
+            border-top: 1px solid #bbb;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .menu-item:hover {
+            background: #f0f0f0;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .fullscreen-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 2000;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .history-panel {
+            position: absolute;
+            left: -300px;
+            top: 0;
+            width: 300px;
+            height: 100%;
+            background: #f8f8f8;
+            border-right: 1px solid #ddd;
+            transition: left 0.3s;
+            z-index: 500;
+            overflow-y: auto;
+        }
+
+        .history-panel.open {
+            left: 0;
+        }
+
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .history-item:hover {
+            background: #e8e8e8;
+        }
+
+        .p5-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
     </style>
 </head>
 <body>
-    <div id="toolbar">
-        <input id="address" type="text" placeholder="Enter URL or search" style="width: 300px;">
-        <button onclick="goBack()">Back</button>
-        <button onclick="goForward()">Forward</button>
-        <button onclick="refresh()">Refresh</button>
-        <button onclick="newTab()">New Tab</button>
-        <button onclick="newWindow()">New Window</button>
-        <button onclick="toggleFullscreen()">Fullscreen</button>
-        <select id="history"></select>
+    <div class="browser-window">
+        <div class="title-bar">
+            <div class="window-title">P.O.P.S. Community Browser</div>
+            <div class="window-controls">
+                <div class="control-btn close-btn" onclick="closeWindow()"></div>
+                <div class="control-btn minimize-btn" onclick="minimizeWindow()"></div>
+                <div class="control-btn maximize-btn" onclick="toggleFullscreen()"></div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button class="nav-btn" id="backBtn" onclick="goBack()" disabled>←</button>
+            <button class="nav-btn" id="forwardBtn" onclick="goForward()" disabled>→</button>
+            <button class="nav-btn" onclick="refreshPage()">⟳</button>
+            <button class="nav-btn" onclick="goHome()">⌂</button>
+            
+            <div class="address-bar-container">
+                <span class="security-icon">🔒</span>
+                <input type="text" class="address-bar" id="addressBar" placeholder="Enter URL or search..." onkeydown="handleAddressBar(event)">
+            </div>
+            
+            <button class="menu-btn" onclick="toggleMenu()">⋮</button>
+            
+            <div class="dropdown-menu" id="browserMenu">
+                <div class="menu-item" onclick="newWindow()">New Window</div>
+                <div class="menu-item" onclick="newTab()">New Tab</div>
+                <div class="menu-item" onclick="toggleHistory()">History</div>
+                <div class="menu-item" onclick="toggleFullscreen()">Fullscreen</div>
+                <div class="menu-item" onclick="showBookmarks()">Bookmarks</div>
+                <div class="menu-item" onclick="showSettings()">Settings</div>
+            </div>
+        </div>
+
+        <div class="tab-bar">
+            <div class="tab active" data-tab-id="1">
+                <div class="tab-favicon">🌐</div>
+                <div class="tab-title">New Tab</div>
+                <div class="tab-close" onclick="closeTab(1)">×</div>
+            </div>
+            <button class="new-tab-btn" onclick="newTab()">+</button>
+        </div>
+
+        <div class="content-area">
+            <div class="loading-bar" id="loadingBar" style="width: 0%"></div>
+            <iframe class="webpage-frame" id="webFrame" src="about:blank"></iframe>
+        </div>
+
+        <div class="status-bar">
+            <span id="statusText">Ready</span>
+        </div>
+
+        <div class="history-panel" id="historyPanel">
+            <h3 style="padding: 15px; margin: 0; background: #e8e8e8; border-bottom: 1px solid #ddd;">Browser History</h3>
+            <div id="historyList"></div>
+        </div>
     </div>
-    <div id="tabs"></div> <!-- Tab buttons here -->
-    <div id="content"><iframe id="viewer"></iframe></div>
+
+    <button class="fullscreen-btn" id="exitFullscreenBtn" onclick="exitFullscreen()">Exit Fullscreen</button>
 
     <script>
-        let historyStack = [];
-        let currentTab = 0;
-        let tabs = [{ iframe: document.getElementById('viewer'), history: [], index: -1 }];
+        let tabs = [];
+        let activeTabId = 1;
+        let tabIdCounter = 1;
+        let history = [];
+        let historyIndex = -1;
+        let isFullscreen = false;
+        let p5Instance;
 
-        function loadPage(url) {
-            if (!url.startsWith('http')) url = 'https://' + url;
-            tabs[currentTab].iframe.src = url;
-            tabs[currentTab].history.push(url);
-            tabs[currentTab].index++;
-            updateHistoryMenu();
+        // Initialize P5.js for visual effects
+        function initP5() {
+            new p5((p) => {
+                let particles = [];
+                
+                p.setup = function() {
+                    let canvas = p.createCanvas(window.innerWidth, window.innerHeight);
+                    canvas.parent(document.body);
+                    canvas.class('p5-canvas');
+                    
+                    // Create floating particles
+                    for(let i = 0; i < 50; i++) {
+                        particles.push({
+                            x: p.random(p.width),
+                            y: p.random(p.height),
+                            vx: p.random(-0.5, 0.5),
+                            vy: p.random(-0.5, 0.5),
+                            alpha: p.random(20, 60)
+                        });
+                    }
+                };
+                
+                p.draw = function() {
+                    p.clear();
+                    
+                    // Draw floating particles
+                    for(let particle of particles) {
+                        p.fill(255, 255, 255, particle.alpha);
+                        p.noStroke();
+                        p.circle(particle.x, particle.y, 3);
+                        
+                        particle.x += particle.vx;
+                        particle.y += particle.vy;
+                        
+                        if(particle.x < 0 || particle.x > p.width) particle.vx *= -1;
+                        if(particle.y < 0 || particle.y > p.height) particle.vy *= -1;
+                    }
+                };
+                
+                p.windowResized = function() {
+                    p.resizeCanvas(window.innerWidth, window.innerHeight);
+                };
+                
+                p5Instance = p;
+            });
         }
 
-        document.getElementById('address').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') loadPage(e.target.value);
-        });
+        // Initialize the browser
+        function initBrowser() {
+            tabs.push({
+                id: 1,
+                title: "New Tab",
+                url: "about:blank",
+                favicon: "🌐"
+            });
+            
+            loadStartPage();
+            initP5();
+            updateNavigationButtons();
+        }
+
+        function loadStartPage() {
+            const startPageHTML = `
+                <html>
+                <head>
+                    <title>P.O.P.S. Community Browser</title>
+                    <style>
+                        body {
+                            font-family: 'Segoe UI', sans-serif;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            text-align: center;
+                            padding: 50px 20px;
+                            margin: 0;
+                        }
+                        .logo {
+                            font-size: 72px;
+                            margin-bottom: 20px;
+                        }
+                        .title {
+                            font-size: 48px;
+                            margin-bottom: 10px;
+                            font-weight: 300;
+                        }
+                        .subtitle {
+                            font-size: 18px;
+                            opacity: 0.8;
+                            margin-bottom: 40px;
+                        }
+                        .quick-links {
+                            display: flex;
+                            justify-content: center;
+                            gap: 20px;
+                            flex-wrap: wrap;
+                            margin-top: 40px;
+                        }
+                        .link-card {
+                            background: rgba(255,255,255,0.1);
+                            padding: 20px;
+                            border-radius: 12px;
+                            backdrop-filter: blur(10px);
+                            cursor: pointer;
+                            transition: all 0.3s;
+                            min-width: 150px;
+                        }
+                        .link-card:hover {
+                            background: rgba(255,255,255,0.2);
+                            transform: translateY(-5px);
+                        }
+                        .search-box {
+                            background: rgba(255,255,255,0.9);
+                            border: none;
+                            padding: 15px 20px;
+                            border-radius: 25px;
+                            font-size: 16px;
+                            width: 400px;
+                            max-width: 80%;
+                            margin: 20px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="logo">🌐</div>
+                    <h1 class="title">P.O.P.S. Community Browser</h1>
+                    <p class="subtitle">Your gateway to the web</p>
+                    
+                    <input type="text" class="search-box" placeholder="Search or enter URL..." onkeydown="if(event.key==='Enter') parent.navigateToUrl(this.value)">
+                    
+                    <div class="quick-links">
+                        <div class="link-card" onclick="parent.navigateToUrl('https://google.com')">
+                            <div style="font-size: 24px; margin-bottom: 10px;">🔍</div>
+                            <div>Google</div>
+                        </div>
+                        <div class="link-card" onclick="parent.navigateToUrl('https://youtube.com')">
+                            <div style="font-size: 24px; margin-bottom: 10px;">📺</div>
+                            <div>YouTube</div>
+                        </div>
+                        <div class="link-card" onclick="parent.navigateToUrl('https://github.com')">
+                            <div style="font-size: 24px; margin-bottom: 10px;">💻</div>
+                            <div>GitHub</div>
+                        </div>
+                        <div class="link-card" onclick="parent.navigateToUrl('https://charlesmack.github.io/web-browser/')">
+                            <div style="font-size: 24px; margin-bottom: 10px;">🏠</div>
+                            <div>Original Browser</div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            const blob = new Blob([startPageHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            document.getElementById('webFrame').src = url;
+        }
+
+        function handleAddressBar(event) {
+            if (event.key === 'Enter') {
+                const url = event.target.value;
+                navigateToUrl(url);
+            }
+        }
+
+        function navigateToUrl(url) {
+            if (!url) return;
+            
+            // Add protocol if missing
+            if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('about:')) {
+                if (url.includes('.') && !url.includes(' ')) {
+                    url = 'https://' + url;
+                } else {
+                    url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+                }
+            }
+            
+            showLoadingProgress();
+            
+            // Update address bar
+            document.getElementById('addressBar').value = url;
+            
+            // Add to history
+            if (historyIndex < history.length - 1) {
+                history = history.slice(0, historyIndex + 1);
+            }
+            history.push({
+                url: url,
+                title: url,
+                timestamp: new Date()
+            });
+            historyIndex = history.length - 1;
+            
+            updateNavigationButtons();
+            updateHistoryPanel();
+            
+            // Load the page
+            try {
+                document.getElementById('webFrame').src = url;
+                updateTabTitle(url);
+                updateStatusText('Loading ' + url);
+            } catch (error) {
+                updateStatusText('Error loading page: ' + error.message);
+            }
+        }
+
+        function showLoadingProgress() {
+            const loadingBar = document.getElementById('loadingBar');
+            let progress = 0;
+            
+            const interval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress > 90) progress = 90;
+                
+                loadingBar.style.width = progress + '%';
+                
+                if (progress >= 90) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        loadingBar.style.width = '100%';
+                        setTimeout(() => {
+                            loadingBar.style.width = '0%';
+                        }, 200);
+                    }, 500);
+                }
+            }, 100);
+        }
 
         function goBack() {
-            if (tabs[currentTab].index > 0) {
-                tabs[currentTab].index--;
-                tabs[currentTab].iframe.src = tabs[currentTab].history[tabs[currentTab].index];
+            if (historyIndex > 0) {
+                historyIndex--;
+                const item = history[historyIndex];
+                document.getElementById('addressBar').value = item.url;
+                document.getElementById('webFrame').src = item.url;
+                updateNavigationButtons();
+                updateStatusText('Going back to ' + item.title);
             }
         }
 
         function goForward() {
-            if (tabs[currentTab].index < tabs[currentTab].history.length - 1) {
-                tabs[currentTab].index++;
-                tabs[currentTab].iframe.src = tabs[currentTab].history[tabs[currentTab].index];
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                const item = history[historyIndex];
+                document.getElementById('addressBar').value = item.url;
+                document.getElementById('webFrame').src = item.url;
+                updateNavigationButtons();
+                updateStatusText('Going forward to ' + item.title);
             }
         }
 
-        function refresh() {
-            tabs[currentTab].iframe.src = tabs[currentTab].iframe.src;
+        function refreshPage() {
+            const frame = document.getElementById('webFrame');
+            frame.src = frame.src;
+            updateStatusText('Refreshing page...');
+            showLoadingProgress();
+        }
+
+        function goHome() {
+            loadStartPage();
+            document.getElementById('addressBar').value = '';
+            updateStatusText('Home');
+        }
+
+        function updateNavigationButtons() {
+            document.getElementById('backBtn').disabled = historyIndex <= 0;
+            document.getElementById('forwardBtn').disabled = historyIndex >= history.length - 1;
+        }
+
+        function updateTabTitle(url) {
+            const tab = document.querySelector(`.tab[data-tab-id="${activeTabId}"] .tab-title`);
+            if (tab) {
+                const title = url.length > 25 ? url.substring(0, 22) + '...' : url;
+                tab.textContent = title;
+            }
+        }
+
+        function updateStatusText(text) {
+            document.getElementById('statusText').textContent = text;
         }
 
         function newTab() {
-            // Create new iframe, add tab button, switch to it
-            let newIframe = document.createElement('iframe');
-            document.getElementById('content').appendChild(newIframe);
-            newIframe.style.display = 'none';
-            tabs.push({ iframe: newIframe, history: [], index: -1 });
-            currentTab = tabs.length - 1;
-            switchTab(currentTab);
+            tabIdCounter++;
+            const newTabId = tabIdCounter;
+            
+            tabs.push({
+                id: newTabId,
+                title: "New Tab",
+                url: "about:blank",
+                favicon: "🌐"
+            });
+            
+            const tabBar = document.querySelector('.tab-bar');
+            const newTabBtn = document.querySelector('.new-tab-btn');
+            
+            const tabElement = document.createElement('div');
+            tabElement.className = 'tab';
+            tabElement.setAttribute('data-tab-id', newTabId);
+            tabElement.innerHTML = `
+                <div class="tab-favicon">🌐</div>
+                <div class="tab-title">New Tab</div>
+                <div class="tab-close" onclick="closeTab(${newTabId})">×</div>
+            `;
+            
+            tabElement.onclick = () => switchToTab(newTabId);
+            
+            tabBar.insertBefore(tabElement, newTabBtn);
+            switchToTab(newTabId);
+            loadStartPage();
         }
 
-        function switchTab(tabIndex) {
-            tabs.forEach((tab, i) => tab.iframe.style.display = (i === tabIndex) ? 'block' : 'none');
-            currentTab = tabIndex;
+        function closeTab(tabId) {
+            event.stopPropagation();
+            
+            if (tabs.length === 1) return; // Don't close the last tab
+            
+            const tabIndex = tabs.findIndex(t => t.id === tabId);
+            if (tabIndex !== -1) {
+                tabs.splice(tabIndex, 1);
+                document.querySelector(`.tab[data-tab-id="${tabId}"]`).remove();
+                
+                if (activeTabId === tabId) {
+                    const newActiveTab = tabs[Math.min(tabIndex, tabs.length - 1)];
+                    switchToTab(newActiveTab.id);
+                }
+            }
+        }
+
+        function switchToTab(tabId) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            // Add active class to selected tab
+            document.querySelector(`.tab[data-tab-id="${tabId}"]`).classList.add('active');
+            
+            activeTabId = tabId;
+            const tab = tabs.find(t => t.id === tabId);
+            if (tab) {
+                document.getElementById('addressBar').value = tab.url;
+                document.getElementById('webFrame').src = tab.url;
+            }
         }
 
         function newWindow() {
             window.open(window.location.href, '_blank');
         }
 
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-            else document.exitFullscreen();
+        function toggleMenu() {
+            const menu = document.getElementById('browserMenu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
         }
 
-        function updateHistoryMenu() {
-            let select = document.getElementById('history');
-            select.innerHTML = '';
-            tabs[currentTab].history.forEach((url, i) => {
-                let option = document.createElement('option');
-                option.value = i;
-                option.text = url;
-                select.add(option);
+        function toggleHistory() {
+            const panel = document.getElementById('historyPanel');
+            panel.classList.toggle('open');
+            updateHistoryPanel();
+        }
+
+        function updateHistoryPanel() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            
+            history.slice(-20).reverse().forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div style="font-weight: bold;">${item.title}</div>
+                    <div style="color: #666; font-size: 11px;">${item.url}</div>
+                    <div style="color: #999; font-size: 10px;">${item.timestamp.toLocaleString()}</div>
+                `;
+                div.onclick = () => {
+                    navigateToUrl(item.url);
+                    toggleHistory();
+                };
+                historyList.appendChild(div);
             });
-            select.onchange = (e) => {
-                tabs[currentTab].index = parseInt(e.target.value);
-                tabs[currentTab].iframe.src = tabs[currentTab].history[tabs[currentTab].index];
-            };
         }
 
-        // P5.js for skeuomorphic UI (example: draw custom button)
-        function setup() {
-            let canvas = createCanvas(100, 50);
-            canvas.parent('toolbar'); // Attach to toolbar for a custom button
-        }
-
-        function draw() {
-            background(220);
-            // Draw skeuomorphic back button example
-            fill(200);
-            rect(10, 10, 80, 30, 5); // Rounded button
-            text('Back', 30, 25);
-        }
-
-        // Example scraping function (for same-origin or CORS-enabled)
-        async function scrapeAndDisplay(url) {
-            try {
-                let res = await fetch(url);
-                let text = await res.text();
-                let parser = new DOMParser();
-                let doc = parser.parseFromString(text, 'text/html');
-                // Grab images
-                let images = doc.querySelectorAll('img');
-                images.forEach(img => {
-                    let newImg = document.createElement('img');
-                    newImg.src = img.src;
-                    document.body.appendChild(newImg); // Display in custom view
-                });
-                // Similar for videos
-            } catch (e) {
-                console.error('Scraping error:', e);
+        function toggleFullscreen() {
+            if (!isFullscreen) {
+                document.documentElement.requestFullscreen?.() || 
+                document.documentElement.webkitRequestFullscreen?.() || 
+                document.documentElement.msRequestFullscreen?.();
+                document.getElementById('exitFullscreenBtn').style.display = 'block';
+                isFullscreen = true;
+            } else {
+                exitFullscreen();
             }
         }
+
+        function exitFullscreen() {
+            document.exitFullscreen?.() || 
+            document.webkitExitFullscreen?.() || 
+            document.msExitFullscreen?.();
+            document.getElementById('exitFullscreenBtn').style.display = 'none';
+            isFullscreen = false;
+        }
+
+        function closeWindow() {
+            window.close();
+        }
+
+        function minimizeWindow() {
+            // This would typically minimize the window, but browsers don't allow this
+            updateStatusText('Minimize functionality not available in browser environment');
+        }
+
+        function showBookmarks() {
+            updateStatusText('Bookmarks feature coming soon...');
+        }
+
+        function showSettings() {
+            updateStatusText('Settings feature coming soon...');
+        }
+
+        // Close dropdown menus when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.menu-btn')) {
+                document.getElementById('browserMenu').style.display = 'none';
+            }
+        });
+
+        // Handle fullscreen change events
+        document.addEventListener('fullscreenchange', () => {
+            isFullscreen = document.fullscreenElement !== null;
+            if (!isFullscreen) {
+                document.getElementById('exitFullscreenBtn').style.display = 'none';
+            }
+        });
+
+        // Initialize the browser when page loads
+        window.addEventListener('load', initBrowser);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (p5Instance) {
+                p5Instance.resizeCanvas(window.innerWidth, window.innerHeight);
+            }
+        });
     </script>
 </body>
 </html>
