@@ -30,6 +30,38 @@
             position: relative;
         }
 
+        .browser-header {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .browser-header.fullscreen-hidden {
+            transform: translateY(-100%);
+        }
+
+        .fullscreen-toggle {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 0 0 4px 4px;
+            z-index: 3000;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        .fullscreen-toggle.visible {
+            opacity: 1;
+        }
+
+        .fullscreen-toggle:hover {
+            background: rgba(255,255,255,0.6);
+            height: 12px;
+        }
+
         .title-bar {
             height: 32px;
             background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
@@ -142,6 +174,14 @@
             justify-content: center;
             font-size: 16px;
             color: #333;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .menu-btn:hover {
+            background: linear-gradient(to bottom, #fff, #f0f0f0);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
         .tab-bar {
@@ -271,15 +311,24 @@
 
         .dropdown-menu {
             position: absolute;
-            top: 100%;
+            top: calc(100% + 5px);
             right: 0;
             background: white;
             border: 1px solid #ccc;
             border-radius: 6px;
             box-shadow: 0 6px 20px rgba(0,0,0,0.2);
             min-width: 200px;
-            z-index: 1000;
+            z-index: 2000;
             display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.2s;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .menu-item {
@@ -288,6 +337,9 @@
             border-bottom: 1px solid #eee;
             font-size: 13px;
             transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .menu-item:hover {
@@ -296,6 +348,15 @@
 
         .menu-item:last-child {
             border-bottom: none;
+            border-radius: 0 0 6px 6px;
+        }
+
+        .menu-item:first-child {
+            border-radius: 6px 6px 0 0;
+        }
+
+        .menu-icon {
+            font-size: 16px;
         }
 
         .fullscreen-btn {
@@ -314,30 +375,179 @@
 
         .history-panel {
             position: absolute;
-            left: -300px;
+            left: -350px;
             top: 0;
-            width: 300px;
+            width: 350px;
             height: 100%;
             background: #f8f8f8;
             border-right: 1px solid #ddd;
             transition: left 0.3s;
-            z-index: 500;
+            z-index: 1500;
             overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2);
         }
 
         .history-panel.open {
             left: 0;
         }
 
+        .history-header {
+            padding: 15px;
+            background: #e8e8e8;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-panel-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #666;
+        }
+
         .history-item {
-            padding: 10px;
+            padding: 12px 15px;
             border-bottom: 1px solid #eee;
             cursor: pointer;
             font-size: 12px;
+            transition: background 0.2s;
         }
 
         .history-item:hover {
             background: #e8e8e8;
+        }
+
+        .history-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .history-url {
+            color: #666;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .history-time {
+            color: #999;
+            font-size: 10px;
+        }
+
+        .bookmarks-panel, .settings-panel {
+            position: absolute;
+            right: -350px;
+            top: 0;
+            width: 350px;
+            height: 100%;
+            background: #f8f8f8;
+            border-left: 1px solid #ddd;
+            transition: right 0.3s;
+            z-index: 1500;
+            overflow-y: auto;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+        }
+
+        .bookmarks-panel.open, .settings-panel.open {
+            right: 0;
+        }
+
+        .panel-header {
+            padding: 15px;
+            background: #e8e8e8;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .bookmark-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+
+        .bookmark-item:hover {
+            background: #e8e8e8;
+        }
+
+        .bookmark-favicon {
+            font-size: 16px;
+        }
+
+        .bookmark-info {
+            flex: 1;
+        }
+
+        .bookmark-title {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .bookmark-url {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .settings-group {
+            margin: 20px 15px;
+        }
+
+        .settings-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .settings-label {
+            font-size: 12px;
+        }
+
+        .settings-toggle {
+            width: 40px;
+            height: 20px;
+            background: #ccc;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .settings-toggle.active {
+            background: #4285f4;
+        }
+
+        .settings-toggle::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s;
+        }
+
+        .settings-toggle.active::after {
+            left: 22px;
         }
 
         .p5-canvas {
@@ -347,49 +557,99 @@
             pointer-events: none;
             z-index: 100;
         }
+
+        /* Fullscreen specific styles */
+        .fullscreen .browser-window {
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        /* Overlay for closing panels */
+        .panel-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .panel-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 <body>
+    <div class="panel-overlay" id="panelOverlay"></div>
+    
+    <div class="fullscreen-toggle" id="fullscreenToggle"></div>
+    
     <div class="browser-window">
-        <div class="title-bar">
-            <div class="window-title">P.O.P.S. Community Browser</div>
-            <div class="window-controls">
-                <div class="control-btn close-btn" onclick="closeWindow()"></div>
-                <div class="control-btn minimize-btn" onclick="minimizeWindow()"></div>
-                <div class="control-btn maximize-btn" onclick="toggleFullscreen()"></div>
+        <div class="browser-header" id="browserHeader">
+            <div class="title-bar">
+                <div class="window-title">P.O.P.S. Community Browser</div>
+                <div class="window-controls">
+                    <div class="control-btn close-btn" onclick="closeWindow()"></div>
+                    <div class="control-btn minimize-btn" onclick="minimizeWindow()"></div>
+                    <div class="control-btn maximize-btn" onclick="toggleFullscreen()"></div>
+                </div>
             </div>
-        </div>
 
-        <div class="toolbar">
-            <button class="nav-btn" id="backBtn" onclick="goBack()" disabled>←</button>
-            <button class="nav-btn" id="forwardBtn" onclick="goForward()" disabled>→</button>
-            <button class="nav-btn" onclick="refreshPage()">⟳</button>
-            <button class="nav-btn" onclick="goHome()">⌂</button>
-            
-            <div class="address-bar-container">
-                <span class="security-icon">🔒</span>
-                <input type="text" class="address-bar" id="addressBar" placeholder="Enter URL or search..." onkeydown="handleAddressBar(event)">
+            <div class="toolbar">
+                <button class="nav-btn" id="backBtn" onclick="goBack()" disabled>←</button>
+                <button class="nav-btn" id="forwardBtn" onclick="goForward()" disabled>→</button>
+                <button class="nav-btn" onclick="refreshPage()">⟳</button>
+                <button class="nav-btn" onclick="goHome()">⌂</button>
+                
+                <div class="address-bar-container">
+                    <span class="security-icon">🔒</span>
+                    <input type="text" class="address-bar" id="addressBar" placeholder="Enter URL or search..." onkeydown="handleAddressBar(event)">
+                </div>
+                
+                <div class="menu-btn" onclick="toggleMenu()" id="menuBtn">
+                    ⋮
+                    <div class="dropdown-menu" id="browserMenu">
+                        <div class="menu-item" onclick="newWindow()">
+                            <span class="menu-icon">🪟</span>
+                            <span>New Window</span>
+                        </div>
+                        <div class="menu-item" onclick="newTab()">
+                            <span class="menu-icon">📄</span>
+                            <span>New Tab</span>
+                        </div>
+                        <div class="menu-item" onclick="toggleHistory()">
+                            <span class="menu-icon">📖</span>
+                            <span>History</span>
+                        </div>
+                        <div class="menu-item" onclick="showBookmarks()">
+                            <span class="menu-icon">⭐</span>
+                            <span>Bookmarks</span>
+                        </div>
+                        <div class="menu-item" onclick="showSettings()">
+                            <span class="menu-icon">⚙️</span>
+                            <span>Settings</span>
+                        </div>
+                        <div class="menu-item" onclick="toggleFullscreen()">
+                            <span class="menu-icon">⛶</span>
+                            <span>Fullscreen</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <button class="menu-btn" onclick="toggleMenu()">⋮</button>
-            
-            <div class="dropdown-menu" id="browserMenu">
-                <div class="menu-item" onclick="newWindow()">New Window</div>
-                <div class="menu-item" onclick="newTab()">New Tab</div>
-                <div class="menu-item" onclick="toggleHistory()">History</div>
-                <div class="menu-item" onclick="toggleFullscreen()">Fullscreen</div>
-                <div class="menu-item" onclick="showBookmarks()">Bookmarks</div>
-                <div class="menu-item" onclick="showSettings()">Settings</div>
-            </div>
-        </div>
 
-        <div class="tab-bar">
-            <div class="tab active" data-tab-id="1">
-                <div class="tab-favicon">🌐</div>
-                <div class="tab-title">New Tab</div>
-                <div class="tab-close" onclick="closeTab(1)">×</div>
+            <div class="tab-bar">
+                <div class="tab active" data-tab-id="1">
+                    <div class="tab-favicon">🌐</div>
+                    <div class="tab-title">New Tab</div>
+                    <div class="tab-close" onclick="closeTab(1)">×</div>
+                </div>
+                <button class="new-tab-btn" onclick="newTab()">+</button>
             </div>
-            <button class="new-tab-btn" onclick="newTab()">+</button>
         </div>
 
         <div class="content-area">
@@ -397,13 +657,90 @@
             <iframe class="webpage-frame" id="webFrame" src="about:blank"></iframe>
         </div>
 
-        <div class="status-bar">
+        <div class="status-bar" id="statusBar">
             <span id="statusText">Ready</span>
         </div>
 
         <div class="history-panel" id="historyPanel">
-            <h3 style="padding: 15px; margin: 0; background: #e8e8e8; border-bottom: 1px solid #ddd;">Browser History</h3>
+            <div class="history-header">
+                <h3>Browser History</h3>
+                <button class="close-panel-btn" onclick="toggleHistory()">×</button>
+            </div>
             <div id="historyList"></div>
+        </div>
+
+        <div class="bookmarks-panel" id="bookmarksPanel">
+            <div class="panel-header">
+                <h3>Bookmarks</h3>
+                <button class="close-panel-btn" onclick="hideBookmarks()">×</button>
+            </div>
+            <div id="bookmarksList">
+                <div class="bookmark-item" onclick="navigateToUrl('https://google.com')">
+                    <span class="bookmark-favicon">🔍</span>
+                    <div class="bookmark-info">
+                        <div class="bookmark-title">Google</div>
+                        <div class="bookmark-url">https://google.com</div>
+                    </div>
+                </div>
+                <div class="bookmark-item" onclick="navigateToUrl('https://youtube.com')">
+                    <span class="bookmark-favicon">📺</span>
+                    <div class="bookmark-info">
+                        <div class="bookmark-title">YouTube</div>
+                        <div class="bookmark-url">https://youtube.com</div>
+                    </div>
+                </div>
+                <div class="bookmark-item" onclick="navigateToUrl('https://github.com')">
+                    <span class="bookmark-favicon">💻</span>
+                    <div class="bookmark-info">
+                        <div class="bookmark-title">GitHub</div>
+                        <div class="bookmark-url">https://github.com</div>
+                    </div>
+                </div>
+                <div class="bookmark-item" onclick="navigateToUrl('https://stackoverflow.com')">
+                    <span class="bookmark-favicon">💬</span>
+                    <div class="bookmark-info">
+                        <div class="bookmark-title">Stack Overflow</div>
+                        <div class="bookmark-url">https://stackoverflow.com</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-panel" id="settingsPanel">
+            <div class="panel-header">
+                <h3>Settings</h3>
+                <button class="close-panel-btn" onclick="hideSettings()">×</button>
+            </div>
+            <div class="settings-group">
+                <div class="settings-title">Privacy & Security</div>
+                <div class="settings-item">
+                    <span class="settings-label">Block Pop-ups</span>
+                    <div class="settings-toggle active" onclick="toggleSetting(this)"></div>
+                </div>
+                <div class="settings-item">
+                    <span class="settings-label">Enable JavaScript</span>
+                    <div class="settings-toggle active" onclick="toggleSetting(this)"></div>
+                </div>
+                <div class="settings-item">
+                    <span class="settings-label">Save Passwords</span>
+                    <div class="settings-toggle" onclick="toggleSetting(this)"></div>
+                </div>
+            </div>
+            <div class="settings-group">
+                <div class="settings-title">Appearance</div>
+                <div class="settings-item">
+                    <span class="settings-label">Dark Mode</span>
+                    <div class="settings-toggle" onclick="toggleSetting(this)"></div>
+                </div>
+                <div class="settings-item">
+                    <span class="settings-label">Show Status Bar</span>
+                    <div class="settings-toggle active" onclick="toggleStatusBar(this)"></div>
+                </div>
+                <div class="settings-item">
+                    <span class="settings-label">Animated Effects</span>
+                    <div class="settings-toggle active" onclick="toggleSetting(this)"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -417,6 +754,8 @@
         let historyIndex = -1;
         let isFullscreen = false;
         let p5Instance;
+        let fullscreenTimeout;
+        let isHeaderVisible = true;
 
         // Initialize P5.js for visual effects
         function initP5() {
@@ -477,6 +816,54 @@
             loadStartPage();
             initP5();
             updateNavigationButtons();
+            setupFullscreenBehavior();
+        }
+
+        function setupFullscreenBehavior() {
+            const browserHeader = document.getElementById('browserHeader');
+            const fullscreenToggle = document.getElementById('fullscreenToggle');
+            let mouseTimer;
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isFullscreen) return;
+
+                clearTimeout(mouseTimer);
+
+                if (e.clientY <= 100) {
+                    // Mouse near top - show header
+                    if (!isHeaderVisible) {
+                        browserHeader.classList.remove('fullscreen-hidden');
+                        fullscreenToggle.classList.remove('visible');
+                        isHeaderVisible = true;
+                    }
+                } else {
+                    // Mouse away from top - hide header after delay
+                    mouseTimer = setTimeout(() => {
+                        if (isFullscreen) {
+                            browserHeader.classList.add('fullscreen-hidden');
+                            fullscreenToggle.classList.add('visible');
+                            isHeaderVisible = false;
+                        }
+                    }, 2000);
+                }
+            });
+
+            // Click fullscreen toggle to show header temporarily
+            fullscreenToggle.addEventListener('click', () => {
+                if (!isHeaderVisible) {
+                    browserHeader.classList.remove('fullscreen-hidden');
+                    fullscreenToggle.classList.remove('visible');
+                    isHeaderVisible = true;
+                    
+                    setTimeout(() => {
+                        if (isFullscreen) {
+                            browserHeader.classList.add('fullscreen-hidden');
+                            fullscreenToggle.classList.add('visible');
+                            isHeaderVisible = false;
+                        }
+                    }, 3000);
+                }
+            });
         }
 
         function loadStartPage() {
@@ -582,6 +969,9 @@
 
         function navigateToUrl(url) {
             if (!url) return;
+            
+            // Close any open panels
+            closeAllPanels();
             
             // Add protocol if missing
             if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('about:')) {
@@ -723,12 +1113,16 @@
             tabBar.insertBefore(tabElement, newTabBtn);
             switchToTab(newTabId);
             loadStartPage();
+            updateStatusText('New tab opened');
         }
 
         function closeTab(tabId) {
             event.stopPropagation();
             
-            if (tabs.length === 1) return; // Don't close the last tab
+            if (tabs.length === 1) {
+                updateStatusText('Cannot close the last tab');
+                return;
+            }
             
             const tabIndex = tabs.findIndex(t => t.id === tabId);
             if (tabIndex !== -1) {
@@ -739,6 +1133,7 @@
                     const newActiveTab = tabs[Math.min(tabIndex, tabs.length - 1)];
                     switchToTab(newActiveTab.id);
                 }
+                updateStatusText('Tab closed');
             }
         }
 
@@ -754,35 +1149,161 @@
             if (tab) {
                 document.getElementById('addressBar').value = tab.url;
                 document.getElementById('webFrame').src = tab.url;
+                updateStatusText(`Switched to tab: ${tab.title}`);
             }
         }
 
         function newWindow() {
-            window.open(window.location.href, '_blank');
+            // Create a new browser window
+            const newWindowFeatures = 'width=1200,height=800,scrollbars=yes,resizable=yes,toolbar=yes,menubar=yes,location=yes';
+            const newWindow = window.open('', '_blank', newWindowFeatures);
+            
+            if (newWindow) {
+                newWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>P.O.P.S. Community Browser - New Window</title>
+                        <style>
+                            body {
+                                font-family: 'Segoe UI', sans-serif;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                text-align: center;
+                                padding: 50px 20px;
+                                margin: 0;
+                            }
+                            .message {
+                                font-size: 24px;
+                                margin-bottom: 20px;
+                            }
+                            .link {
+                                color: #fff;
+                                text-decoration: underline;
+                                cursor: pointer;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="message">🌐 P.O.P.S. Community Browser</div>
+                        <p>New browser window opened!</p>
+                        <p><a href="${window.location.href}" class="link">Open full browser interface</a></p>
+                    </body>
+                    </html>
+                `);
+                newWindow.document.close();
+                updateStatusText('New window opened');
+            } else {
+                updateStatusText('Pop-up blocked. Please allow pop-ups for this site.');
+            }
         }
 
         function toggleMenu() {
             const menu = document.getElementById('browserMenu');
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            const isOpen = menu.classList.contains('show');
+            
+            if (isOpen) {
+                menu.classList.remove('show');
+                setTimeout(() => {
+                    menu.style.display = 'none';
+                }, 200);
+            } else {
+                closeAllPanels();
+                menu.style.display = 'block';
+                setTimeout(() => {
+                    menu.classList.add('show');
+                }, 10);
+            }
         }
 
         function toggleHistory() {
             const panel = document.getElementById('historyPanel');
-            panel.classList.toggle('open');
-            updateHistoryPanel();
+            const overlay = document.getElementById('panelOverlay');
+            const isOpen = panel.classList.contains('open');
+            
+            if (isOpen) {
+                panel.classList.remove('open');
+                overlay.classList.remove('active');
+            } else {
+                closeAllPanels();
+                panel.classList.add('open');
+                overlay.classList.add('active');
+                updateHistoryPanel();
+            }
+        }
+
+        function showBookmarks() {
+            const panel = document.getElementById('bookmarksPanel');
+            const overlay = document.getElementById('panelOverlay');
+            
+            closeAllPanels();
+            panel.classList.add('open');
+            overlay.classList.add('active');
+            updateStatusText('Bookmarks panel opened');
+        }
+
+        function hideBookmarks() {
+            const panel = document.getElementById('bookmarksPanel');
+            const overlay = document.getElementById('panelOverlay');
+            
+            panel.classList.remove('open');
+            overlay.classList.remove('active');
+            updateStatusText('Bookmarks panel closed');
+        }
+
+        function showSettings() {
+            const panel = document.getElementById('settingsPanel');
+            const overlay = document.getElementById('panelOverlay');
+            
+            closeAllPanels();
+            panel.classList.add('open');
+            overlay.classList.add('active');
+            updateStatusText('Settings panel opened');
+        }
+
+        function hideSettings() {
+            const panel = document.getElementById('settingsPanel');
+            const overlay = document.getElementById('panelOverlay');
+            
+            panel.classList.remove('open');
+            overlay.classList.remove('active');
+            updateStatusText('Settings panel closed');
+        }
+
+        function closeAllPanels() {
+            const menu = document.getElementById('browserMenu');
+            const historyPanel = document.getElementById('historyPanel');
+            const bookmarksPanel = document.getElementById('bookmarksPanel');
+            const settingsPanel = document.getElementById('settingsPanel');
+            const overlay = document.getElementById('panelOverlay');
+            
+            menu.classList.remove('show');
+            setTimeout(() => {
+                menu.style.display = 'none';
+            }, 200);
+            
+            historyPanel.classList.remove('open');
+            bookmarksPanel.classList.remove('open');
+            settingsPanel.classList.remove('open');
+            overlay.classList.remove('active');
         }
 
         function updateHistoryPanel() {
             const historyList = document.getElementById('historyList');
             historyList.innerHTML = '';
             
-            history.slice(-20).reverse().forEach(item => {
+            if (history.length === 0) {
+                historyList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No history items</div>';
+                return;
+            }
+            
+            history.slice(-50).reverse().forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'history-item';
                 div.innerHTML = `
-                    <div style="font-weight: bold;">${item.title}</div>
-                    <div style="color: #666; font-size: 11px;">${item.url}</div>
-                    <div style="color: #999; font-size: 10px;">${item.timestamp.toLocaleString()}</div>
+                    <div class="history-title">${item.title}</div>
+                    <div class="history-url">${item.url}</div>
+                    <div class="history-time">${item.timestamp.toLocaleString()}</div>
                 `;
                 div.onclick = () => {
                     navigateToUrl(item.url);
@@ -792,55 +1313,163 @@
             });
         }
 
+        function toggleSetting(toggle) {
+            toggle.classList.toggle('active');
+            const label = toggle.previousElementSibling.textContent;
+            const isActive = toggle.classList.contains('active');
+            updateStatusText(`${label}: ${isActive ? 'Enabled' : 'Disabled'}`);
+        }
+
+        function toggleStatusBar(toggle) {
+            toggleSetting(toggle);
+            const statusBar = document.getElementById('statusBar');
+            const isActive = toggle.classList.contains('active');
+            statusBar.style.display = isActive ? 'flex' : 'none';
+        }
+
         function toggleFullscreen() {
             if (!isFullscreen) {
-                document.documentElement.requestFullscreen?.() || 
-                document.documentElement.webkitRequestFullscreen?.() || 
-                document.documentElement.msRequestFullscreen?.();
-                document.getElementById('exitFullscreenBtn').style.display = 'block';
-                isFullscreen = true;
+                // Enter fullscreen
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
             } else {
+                // Exit fullscreen
                 exitFullscreen();
             }
         }
 
         function exitFullscreen() {
-            document.exitFullscreen?.() || 
-            document.webkitExitFullscreen?.() || 
-            document.msExitFullscreen?.();
-            document.getElementById('exitFullscreenBtn').style.display = 'none';
-            isFullscreen = false;
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
         }
 
         function closeWindow() {
-            window.close();
+            if (confirm('Are you sure you want to close this browser window?')) {
+                window.close();
+            }
         }
 
         function minimizeWindow() {
-            // This would typically minimize the window, but browsers don't allow this
             updateStatusText('Minimize functionality not available in browser environment');
+            // In a real application, this would minimize the window
+            // For demonstration, we'll just show a message
+            setTimeout(() => {
+                updateStatusText('Ready');
+            }, 3000);
         }
 
-        function showBookmarks() {
-            updateStatusText('Bookmarks feature coming soon...');
-        }
-
-        function showSettings() {
-            updateStatusText('Settings feature coming soon...');
-        }
-
-        // Close dropdown menus when clicking outside
+        // Event Listeners
         document.addEventListener('click', (event) => {
+            // Close dropdown menu when clicking outside
             if (!event.target.closest('.menu-btn')) {
-                document.getElementById('browserMenu').style.display = 'none';
+                const menu = document.getElementById('browserMenu');
+                if (menu.classList.contains('show')) {
+                    toggleMenu();
+                }
+            }
+            
+            // Close panels when clicking overlay
+            if (event.target.id === 'panelOverlay') {
+                closeAllPanels();
             }
         });
 
         // Handle fullscreen change events
-        document.addEventListener('fullscreenchange', () => {
-            isFullscreen = document.fullscreenElement !== null;
-            if (!isFullscreen) {
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+        function handleFullscreenChange() {
+            const isCurrentlyFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+            
+            if (isCurrentlyFullscreen && !isFullscreen) {
+                // Entering fullscreen
+                isFullscreen = true;
+                document.body.classList.add('fullscreen');
+                document.getElementById('exitFullscreenBtn').style.display = 'block';
+                updateStatusText('Entered fullscreen mode');
+                
+                // Hide header after a delay
+                setTimeout(() => {
+                    if (isFullscreen) {
+                        document.getElementById('browserHeader').classList.add('fullscreen-hidden');
+                        document.getElementById('fullscreenToggle').classList.add('visible');
+                        isHeaderVisible = false;
+                    }
+                }, 3000);
+                
+            } else if (!isCurrentlyFullscreen && isFullscreen) {
+                // Exiting fullscreen
+                isFullscreen = false;
+                document.body.classList.remove('fullscreen');
                 document.getElementById('exitFullscreenBtn').style.display = 'none';
+                document.getElementById('browserHeader').classList.remove('fullscreen-hidden');
+                document.getElementById('fullscreenToggle').classList.remove('visible');
+                isHeaderVisible = true;
+                updateStatusText('Exited fullscreen mode');
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            if (event.ctrlKey || event.metaKey) {
+                switch (event.key) {
+                    case 't':
+                        event.preventDefault();
+                        newTab();
+                        break;
+                    case 'w':
+                        event.preventDefault();
+                        if (tabs.length > 1) {
+                            closeTab(activeTabId);
+                        }
+                        break;
+                    case 'r':
+                        event.preventDefault();
+                        refreshPage();
+                        break;
+                    case 'l':
+                        event.preventDefault();
+                        document.getElementById('addressBar').focus();
+                        document.getElementById('addressBar').select();
+                        break;
+                    case 'h':
+                        event.preventDefault();
+                        toggleHistory();
+                        break;
+                    case 'b':
+                        event.preventDefault();
+                        showBookmarks();
+                        break;
+                    case 'F11':
+                    case 'f11':
+                        event.preventDefault();
+                        toggleFullscreen();
+                        break;
+                }
+            }
+            
+            if (event.key === 'F11') {
+                event.preventDefault();
+                toggleFullscreen();
+            }
+            
+            if (event.key === 'Escape') {
+                closeAllPanels();
+                if (isFullscreen) {
+                    exitFullscreen();
+                }
             }
         });
 
@@ -853,6 +1482,10 @@
                 p5Instance.resizeCanvas(window.innerWidth, window.innerHeight);
             }
         });
+
+        // Prevent default drag behavior
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
     </script>
 </body>
 </html>
