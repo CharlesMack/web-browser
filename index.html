@@ -290,7 +290,6 @@
             transition: all 0.3s ease-in-out;
         }
 
-        /* Fullscreen-specific styles for content area and iframe */
         .fullscreen .content-area {
             position: absolute;
             top: 0;
@@ -326,6 +325,36 @@
             padding: 0 10px;
             font-size: 11px;
             color: #666;
+        }
+
+        .status-bar-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .open-in-tab-btn {
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #aaa;
+            background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+            cursor: pointer;
+            font-size: 11px;
+            color: #333;
+            transition: all 0.2s;
+            display: none;
+        }
+
+        .open-in-tab-btn:hover {
+            background: linear-gradient(to bottom, #fff, #f0f0f0);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .open-in-tab-btn:active {
+            transform: translateY(0);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
         }
 
         .dropdown-menu {
@@ -577,13 +606,11 @@
             z-index: 100;
         }
 
-        /* Fullscreen specific styles */
         .fullscreen .browser-window {
             border-radius: 0;
             box-shadow: none;
         }
 
-        /* Overlay for closing panels */
         .panel-overlay {
             position: fixed;
             top: 0;
@@ -611,7 +638,7 @@
     <div class="browser-window">
         <div class="browser-header" id="browserHeader">
             <div class="title-bar">
-                <div class="window-title">P.O.P.S. Community Browser</div>
+                <div class="window-title">P.O.P.S. Community Web Browser</div>
                 <div class="window-controls">
                     <div class="control-btn close-btn" onclick="closeWindow()"></div>
                     <div class="control-btn minimize-btn" onclick="minimizeWindow()"></div>
@@ -677,7 +704,10 @@
         </div>
 
         <div class="status-bar" id="statusBar">
-            <span id="statusText">Ready</span>
+            <div class="status-bar-content">
+                <span id="statusText">Ready</span>
+                <button class="open-in-tab-btn" id="openInTabBtn" onclick="openInNewTab()">Open in New Tab</button>
+            </div>
         </div>
 
         <div class="history-panel" id="historyPanel">
@@ -775,17 +805,15 @@
         let p5Instance;
         let fullscreenTimeout;
         let isHeaderVisible = true;
+        let currentUrl = '';
 
-        // Initialize P5.js for visual effects
         function initP5() {
             new p5((p) => {
                 let particles = [];
-                
                 p.setup = function() {
                     let canvas = p.createCanvas(window.innerWidth, window.innerHeight);
                     canvas.parent(document.body);
                     canvas.class('p5-canvas');
-                    
                     for(let i = 0; i < 50; i++) {
                         particles.push({
                             x: p.random(p.width),
@@ -796,7 +824,6 @@
                         });
                     }
                 };
-                
                 p.draw = function() {
                     p.clear();
                     for(let particle of particles) {
@@ -809,16 +836,13 @@
                         if(particle.y < 0 || particle.y > p.height) particle.vy *= -1;
                     }
                 };
-                
                 p.windowResized = function() {
                     p.resizeCanvas(window.innerWidth, window.innerHeight);
                 };
-                
                 p5Instance = p;
             });
         }
 
-        // Initialize the browser
         function initBrowser() {
             tabs.push({
                 id: 1,
@@ -826,11 +850,59 @@
                 url: "about:blank",
                 favicon: "🌐"
             });
-            
             loadStartPage();
             initP5();
             updateNavigationButtons();
             setupFullscreenBehavior();
+            setupIframeErrorHandling();
+        }
+
+        function setupIframeErrorHandling() {
+            const iframe = document.getElementById('webFrame');
+            iframe.onerror = () => {
+                handleIframeError('Failed to load the page due to a server or network error.');
+            };
+            iframe.onload = () => {
+                setTimeout(() => {
+                    try {
+                        const doc = iframe.contentDocument || iframe.contentWindow.document;
+                        if (!doc || !doc.body || doc.body.innerHTML.trim() === '' || doc.title === '') {
+                            handleIframeError('The page appears to be empty or blocked.');
+                        } else {
+                            hideOpenInTabButton();
+                        }
+                    } catch (e) {
+                        handleIframeError('This site cannot be loaded due to restrictions (e.g., X-Frame-Options).');
+                    }
+                }, 5000);
+            };
+        }
+
+        function handleIframeError(message) {
+            const statusText = document.getElementById('statusText');
+            const openInTabBtn = document.getElementById('openInTabBtn');
+            statusText.textContent = `${message} Try opening in a new tab or contact the site owner.`;
+            openInTabBtn.style.display = 'inline-block';
+            setTimeout(() => {
+                if (openInTabBtn.style.display === 'inline-block') {
+                    openInTabBtn.style.display = 'none';
+                    updateStatusText('Ready');
+                }
+            }, 10000);
+        }
+
+        function openInNewTab() {
+            if (currentUrl) {
+                window.open(currentUrl, '_blank');
+                updateStatusText(`Opened ${currentUrl} in a new tab`);
+                document.getElementById('openInTabBtn').style.display = 'none';
+            }
+        }
+
+        function hideOpenInTabButton() {
+            const openInTabBtn = document.getElementById('openInTabBtn');
+            openInTabBtn.style.display = 'none';
+            updateStatusText('Ready');
         }
 
         function setupFullscreenBehavior() {
@@ -840,9 +912,7 @@
 
             document.addEventListener('mousemove', (e) => {
                 if (!isFullscreen) return;
-
                 clearTimeout(mouseTimer);
-
                 if (e.clientY <= 100) {
                     if (!isHeaderVisible) {
                         browserHeader.classList.remove('fullscreen-hidden');
@@ -965,6 +1035,7 @@
             const blob = new Blob([startPageHTML], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             document.getElementById('webFrame').src = url;
+            hideOpenInTabButton();
         }
 
         function handleAddressBar(event) {
@@ -984,6 +1055,7 @@
                     url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
                 }
             }
+            currentUrl = url;
             showLoadingProgress();
             document.getElementById('addressBar').value = url;
             if (historyIndex < history.length - 1) {
@@ -1002,7 +1074,7 @@
                 updateTabTitle(url);
                 updateStatusText('Loading ' + url);
             } catch (error) {
-                updateStatusText('Error loading page: ' + error.message);
+                handleIframeError('Error loading page: ' + error.message);
             }
         }
 
@@ -1029,10 +1101,7 @@
             if (historyIndex > 0) {
                 historyIndex--;
                 const item = history[historyIndex];
-                document.getElementById('addressBar').value = item.url;
-                document.getElementById('webFrame').src = item.url;
-                updateNavigationButtons();
-                updateStatusText('Going back to ' + item.title);
+                navigateToUrl(item.url);
             }
         }
 
@@ -1040,18 +1109,13 @@
             if (historyIndex < history.length - 1) {
                 historyIndex++;
                 const item = history[historyIndex];
-                document.getElementById('addressBar').value = item.url;
-                document.getElementById('webFrame').src = item.url;
-                updateNavigationButtons();
-                updateStatusText('Going forward to ' + item.title);
+                navigateToUrl(item.url);
             }
         }
 
         function refreshPage() {
             const frame = document.getElementById('webFrame');
-            frame.src = frame.src;
-            updateStatusText('Refreshing page...');
-            showLoadingProgress();
+            navigateToUrl(frame.src);
         }
 
         function goHome() {
@@ -1130,6 +1194,7 @@
             if (tab) {
                 document.getElementById('addressBar').value = tab.url;
                 document.getElementById('webFrame').src = tab.url;
+                currentUrl = tab.url;
                 updateStatusText(`Switched to tab: ${tab.title}`);
             }
         }
@@ -1220,9 +1285,7 @@
 
         function showBookmarks() {
             closeMenu();
-            const panel =一半
-
-            document.getElementById('bookmarksPanel');
+            const panel = document.getElementById('bookmarksPanel');
             const overlay = document.getElementById('panelOverlay');
             closeAllPanels();
             panel.classList.add('open');
@@ -1348,7 +1411,6 @@
             }, 3000);
         }
 
-        // Event Listeners
         document.addEventListener('click', (event) => {
             const menu = document.getElementById('browserMenu');
             if (!event.target.closest('.menu-btn') && !event.target.closest('.dropdown-menu') && menu.classList.contains('show')) {
