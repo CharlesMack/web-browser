@@ -1568,6 +1568,56 @@
             }
         });
 
+ document.addEventListener('keydown', (event) => {
+            if (event.ctrlKey || event.metaKey) {
+                switch (event.key) {
+                    case 't':
+                        event.preventDefault();
+                        newTab();
+                        break;
+                    case 'w':
+                        event.preventDefault();
+                        if (tabs.length > 1) {
+                            closeTab(activeTabId);
+                        }
+                        break;
+                    case 'r':
+                        event.preventDefault();
+                        refreshPage();
+                        break;
+                    case 'l':
+                        event.preventDefault();
+                        document.getElementById('addressBar').focus();
+                        document.getElementById('addressBar').select();
+                        break;
+                    case 'h':
+                        event.preventDefault();
+                        toggleHistory();
+                        break;
+                    case 'b':
+                        event.preventDefault();
+                        showBookmarks();
+                        break;
+                    case 'F11':
+                    case 'f11':
+                        event.preventDefault();
+                        toggleFullscreen();
+                        break;
+                }
+            }
+            if (event.key === 'F11') {
+                event.preventDefault();
+                toggleFullscreen();
+            }
+            if (event.key === 'Escape') {
+                closeAllPanels();
+                if (isFullscreen) {
+                    exitFullscreen();
+                }
+            }
+        });
+
+        
         window.addEventListener('load', initBrowser);
 
         document.addEventListener('dragover', (e) => e.preventDefault());
